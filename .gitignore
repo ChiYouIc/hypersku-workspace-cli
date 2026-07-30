@@ -1,0 +1,27 @@
+# 构建产物
+/build/
+*.exe
+*.exe~
+
+# IDE
+.idea/
+*.swp
+*.swo
+*~
+
+# VS Code
+.vscode/
+
+# Go
+/go/pkg/mod/
+*.test
+*.out
+*.test.exe
+
+# 环境变量文件
+.env
+.env.local
+
+# 临时文件
+tmp/
+temp/
