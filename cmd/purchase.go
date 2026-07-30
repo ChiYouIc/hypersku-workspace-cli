@@ -71,8 +71,8 @@ var purchaseCmd = &cobra.Command{
 }
 
 // 采购订单信息
-var getOrderInfoCmd = &cobra.Command{
-	Use:   "get-order-info [orderId]",
+var orderInfoCmd = &cobra.Command{
+	Use:   "info [orderId]",
 	Short: "查询采购订单详情",
 	Long:  "根据订单号查询采购订单的详细信息。包括商品明细、金额等。",
 	Args:  cobra.MaximumNArgs(1),
@@ -137,8 +137,8 @@ SKU：%d
 }
 
 // 采购订单地址
-var getOrderAddress = &cobra.Command{
-	Use:   "get-order-address [orderId]",
+var orderAddressCmd = &cobra.Command{
+	Use:   "address [orderId]",
 	Short: "查询采购订单地址",
 	Long:  "根据订单号查询采购订单的地址信息",
 	Run: func(cmd *cobra.Command, args []string) {
@@ -174,8 +174,8 @@ var getOrderAddress = &cobra.Command{
 }
 
 // 采购日志
-var getPurchaseLog = &cobra.Command{
-	Use:   "get-order-log [orderId]",
+var purchaseLogCmd = &cobra.Command{
+	Use:   "log [orderId]",
 	Short: "查询采购日志",
 	Long:  "根据订单号查询采购日志。",
 	Run: func(cmd *cobra.Command, args []string) {
@@ -203,8 +203,8 @@ var getPurchaseLog = &cobra.Command{
 }
 
 // 国际物流轨迹
-var getInternationalLogistics = &cobra.Command{
-	Use:   "get-purchase-international-logistics [orderId]",
+var internationalLogisticsCmd = &cobra.Command{
+	Use:   "logistics [orderId]",
 	Short: "查询采购订单国际物流轨迹",
 	Long:  "根据订单号查询订单包裹国际段物流轨迹",
 	Run: func(cmd *cobra.Command, args []string) {
@@ -251,10 +251,10 @@ var getInternationalLogistics = &cobra.Command{
 
 func init() {
 	purchaseCmd.AddCommand(
-		getOrderInfoCmd,           // 订单
-		getOrderAddress,           // 地址
-		getPurchaseLog,            // 采购日志
-		getInternationalLogistics, // 国际物流轨迹
+		orderInfoCmd,              // 订单
+		orderAddressCmd,           // 地址
+		purchaseLogCmd,            // 采购日志
+		internationalLogisticsCmd, // 国际物流轨迹
 	)
 	rootCmd.AddCommand(purchaseCmd)
 }

@@ -1,0 +1,44 @@
+---
+name: logistics
+description: Hypersku 物流轨迹查询能力。当用户需要查询国内快递物流轨迹、追踪包裹运输状态时使用。
+version: 1.0.0
+author: owen
+tags:
+  - 物流
+  - 轨迹
+  - 快递
+  - 追踪
+---
+
+# 物流轨迹查询 Skill
+
+通过 `hypersku-cli logistics` 子命令查询包裹的国内物流轨迹，支持根据运单号获取完整的运输节点记录。
+
+## 能力总览
+
+| 能力 | 用途 | CLI 命令 | 参考文件 |
+|------|------|----------|----------|
+| 查询物流轨迹 | 根据运单号查询包裹的完整物流轨迹（时间、城市、事件） | `hypersku-cli logistics tracking <trackingNumber>` | [get-tracking.md](references/get-tracking.md) |
+
+## 意图判断决策树
+
+当用户输入包含以下关键词或意图时，使用对应的子命令：
+
+```
+用户输入
+├── 含 "物流" / "轨迹" / "快递" / "运输" / "到哪了" / "包裹" / "tracking"
+│   └── 执行 logistics tracking <trackingNumber> → 以表格展示物流时间线
+│
+├── 含 "单号" / "运单" / "tracking number"
+│   └── 提示用户提供完整的运单号
+│
+└── 未提供 trackingNumber
+    └── 提示用户提供物流单号
+```
+
+## 注意事项
+
+1. **运单号必填**：所有查询都需要传入物流单号参数，未提供时会显示帮助信息并退出。
+2. **请求格式**：接口要求 `application/x-www-form-urlencoded` 格式，且需要 `X-Requested-With: XMLHttpRequest` 请求头，已由 API 层自动处理。
+3. **物流商**：当前支持安能物流等国内物流商的轨迹查询，具体取决于 hypersku 平台对接的物流渠道。
+4. **轨迹顺序**：轨迹按时间正序排列，从揽件到签收，可能包含多条记录。

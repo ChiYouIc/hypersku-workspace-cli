@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"strings"
 	"sync"
 	"time"
@@ -75,9 +76,15 @@ func (c *Client) Get(path string, result interface{}) error {
 	return c.doRequest(http.MethodGet, path, nil, result)
 }
 
-// Post 发送 POST 请求
+// Post 发送 POST 请求，body 以 JSON 格式发送
 func (c *Client) Post(path string, body interface{}, result interface{}) error {
 	return c.doRequest(http.MethodPost, path, body, result)
+}
+
+// PostForm 发送 POST 请求，body 以 application/x-www-form-urlencoded 格式发送
+// body 参数应为 map[string]string 或 map[string]any 类型
+func (c *Client) PostForm(path string, body map[string]string, result interface{}) error {
+	return c.doFormRequest(http.MethodPost, path, body, result)
 }
 
 // Put 发送 PUT 请求
@@ -151,6 +158,66 @@ func (c *Client) doRequest(method, path string, body, result interface{}) error 
 	}
 
 	// 解析响应 JSON
+	if result != nil && len(respBody) > 0 {
+		if err := json.Unmarshal(respBody, result); err != nil {
+			return fmt.Errorf("解析响应 JSON 失败: %w", err)
+		}
+	}
+
+	return nil
+}
+
+// doFormRequest 执行 form-urlencoded 请求
+func (c *Client) doFormRequest(method, path string, body map[string]string, result interface{}) error {
+	fullURL := c.buildURL(path)
+
+	formData := url.Values{}
+	for k, v := range body {
+		formData.Set(k, v)
+	}
+	encoded := formData.Encode()
+
+	req, err := http.NewRequest(method, fullURL, strings.NewReader(encoded))
+	if err != nil {
+		return fmt.Errorf("创建请求失败: %w", err)
+	}
+
+	// 设置全局请求头
+	for k, v := range c.headers {
+		req.Header.Set(k, v)
+	}
+
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8")
+	req.Header.Set("Accept", "application/json")
+
+	if c.debug {
+		fmt.Printf("[HTTP] %s %s\n", method, fullURL)
+		fmt.Printf("[HTTP] 请求体: %s\n", encoded)
+	}
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("请求失败: %w", err)
+	}
+	defer resp.Body.Close()
+
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return fmt.Errorf("读取响应体失败: %w", err)
+	}
+
+	if c.debug {
+		fmt.Printf("[HTTP] 响应状态: %s\n", resp.Status)
+		fmt.Printf("[HTTP] 响应体: %s\n", string(respBody))
+	}
+
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return &HTTPError{
+			StatusCode: resp.StatusCode,
+			Body:       string(respBody),
+		}
+	}
+
 	if result != nil && len(respBody) > 0 {
 		if err := json.Unmarshal(respBody, result); err != nil {
 			return fmt.Errorf("解析响应 JSON 失败: %w", err)

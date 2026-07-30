@@ -18,10 +18,10 @@ tags:
 
 | 能力 | 用途 | CLI 命令 | 参考文件 |
 |------|------|----------|----------|
-| 查询订单详情 | 根据订单号查询商品明细、金额、订单类型/状态、仓库等 | `hypersku-cli purchase get-order-info <orderId>` | [get-order-info.md](references/get-order-info.md) |
-| 查询订单地址 | 根据订单号查询收货地址（国家/省份/市/区/邮编） | `hypersku-cli purchase get-order-address <orderId>` | [get-order-address.md](references/get-order-address.md) |
-| 查询采购日志 | 根据订单号查询订单状态流转日志 | `hypersku-cli purchase get-order-log <orderId>` | [get-order-log.md](references/get-order-log.md) |
-| 查询国际物流 | 根据订单号查询包裹国际段物流轨迹（承运商/单号/轨迹） | `hypersku-cli purchase get-purchase-international-logistics <orderId>` | [get-purchase-international-logistics.md](references/get-purchase-international-logistics.md) |
+| 查询订单详情 | 根据订单号查询商品明细、金额、订单类型/状态、仓库等 | `hypersku-cli purchase info <orderId>` | [info.md](references/info.md) |
+| 查询订单地址 | 根据订单号查询收货地址（国家/省份/市/区/邮编） | `hypersku-cli purchase address <orderId>` | [address.md](references/address.md) |
+| 查询采购日志 | 根据订单号查询订单状态流转日志 | `hypersku-cli purchase log <orderId>` | [log.md](references/log.md) |
+| 查询国际物流 | 根据订单号查询包裹国际段物流轨迹（承运商/单号/轨迹） | `hypersku-cli purchase logistics <orderId>` | [logistics.md](references/logistics.md) |
 
 ## 意图判断决策树
 
@@ -30,16 +30,16 @@ tags:
 ```
 用户输入
 ├── 含 "订单详情" / "订单信息" / "商品" / "买了什么"
-│   └── 执行 get-order-info <orderId> → 展示订单概要 + 商品明细列表
+│   └── 执行 info <orderId> → 展示订单概要 + 商品明细列表
 │
 ├── 含 "地址" / "收货地址" / "寄到哪里" / "收货人"
-│   └── 执行 get-order-address <orderId> → 展示完整收货地址
+│   └── 执行 address <orderId> → 展示完整收货地址
 │
 ├── 含 "日志" / "状态" / "进度" / "到哪一步了" / "流程"
-│   └── 执行 get-order-log <orderId> → 展示时间线状态表
+│   └── 执行 log <orderId> → 展示时间线状态表
 │
 ├── 含 "物流" / "轨迹" / "快递" / "运输" / "到哪了" / "包裹"
-│   └── 执行 get-purchase-international-logistics <orderId> → 展示包裹物流轨迹
+│   └── 执行 logistics <orderId> → 展示包裹物流轨迹
 │
 └── 未提供 orderId
     └── 提示用户提供订单号

@@ -3,7 +3,7 @@
 ## 命令
 
 ```bash
-hypersku-cli purchase get-order-log <orderId>
+hypersku-cli purchase log <orderId>
 ```
 
 ## 输出示例

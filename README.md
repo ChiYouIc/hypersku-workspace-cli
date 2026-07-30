@@ -51,6 +51,7 @@ hypersku-cli/
 ```powershell
 go env -w GO111MODULE=on
 go env -w GOPROXY=https://goproxy.cn,direct
+go mod tidy
 ```
 
 ### 2. 编译
@@ -82,9 +83,6 @@ build\hypersku-cli.exe hello 世界
 
 | Flag | 类型 | 默认值 | 说明 |
 |------|------|--------|------|
-| `--api-base-url` | string | `""` | 第三方 API 的基础 URL |
-| `--api-timeout` | int | `30` | HTTP 请求超时时间（秒） |
-| `--api-token` | string | `""` | Bearer Token 认证 |
 | `--config` | string | `""` | 配置文件路径 |
 | `-v, --version` | bool | `false` | 显示版本信息 |
 | `-h, --help` | bool | `false` | 显示帮助信息 |

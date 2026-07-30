@@ -3,7 +3,7 @@
 ## 命令
 
 ```bash
-hypersku-cli purchase get-order-address <orderId>
+hypersku-cli purchase address <orderId>
 ```
 
 ## 输出示例
