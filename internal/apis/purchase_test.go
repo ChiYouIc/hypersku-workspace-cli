@@ -13,7 +13,7 @@ func TestMain(m *testing.M) {
 	httpclient.Reset()
 	httpclient.Init(
 		httpclient.WithBaseURL("https://pur.hyperoms.com"),
-		httpclient.WithHeader("authorization", "eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJvd2VuLmNoaUBldGFpbGVyaHViLmNvbSIsInVzZXJJZCI6IjE4MCIsIm5hbWUiOiLmsaDlj4siLCJjaWQiOiIxMDAiLCJ0eXBlIjoiMSIsImV4cCI6MTc4NTkyNDI4Nn0.Ns-vkEYRWSVpxEbE0--9JizIXnh7C9fJ_t94ZkwQyZPPszM3bN6yfdzw9UmPaniVGzmZGCsBD3m_Vwi90tMGVDT7XejF7j2ZqHzYZci9zqL8mfcZZ12TkN6cGukvgucR5Jj3VSx9nO-YCthB0rxS3Og2wa9u3TGZ7BGY-C1z1rw"),
+		httpclient.WithHeader("authorization", "eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJvd2VuLmNoaUBldGFpbGVyaHViLmNvbSIsInVzZXJJZCI6IjE4MCIsIm5hbWUiOiLmsaDlj4siLCJjaWQiOiIxMDAiLCJ0eXBlIjoiMSIsImV4cCI6MTc4NjA2Nzc3Nn0.fzlCTnwYI5wUtkwX92fm4fNgllIOyoooDUjfYFFxQKMN095Qbb9kn1a4hIYMTIsaxG-v7ZABa0IwHMzqY6J4u452PWxMQzENmiM3HLP9nlwJ0PRFcpxQhDzGvLZC6NZ6AH4Wiq6HtmMNLqjB9NBTHV6iJjks8y1YupUMnQRj-Zk"),
 	)
 
 	code := m.Run()
@@ -24,10 +24,11 @@ func TestMain(m *testing.M) {
 func TestPageList(t *testing.T) {
 	purchase := NewPurchaseApi()
 	res, err := purchase.PageList(QueryPage{
-		Page:      1,
-		Limit:     10,
-		StartDate: "2026-04-29",
-		EndDate:   "2026-07-30",
+		Page:          1,
+		Limit:         10,
+		StartDate:     "2026-04-29",
+		EndDate:       "2026-07-30",
+		TransactionNo: "3314226687880021084",
 	})
 	if err != nil {
 		t.Errorf("查询订单列表失败: %v", err)

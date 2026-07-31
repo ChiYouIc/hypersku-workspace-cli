@@ -72,21 +72,22 @@ var purchaseCmd = &cobra.Command{
 
 // 采购订单信息
 var orderInfoCmd = &cobra.Command{
-	Use:   "info [orderId]",
-	Short: "查询采购订单详情",
-	Long:  "根据订单号查询采购订单的详细信息。包括商品明细、金额等。",
-	Args:  cobra.MaximumNArgs(1),
+	Use:       "info [orderId]",
+	Short:     "查询采购订单详情",
+	Long:      "根据订单号查询采购订单的详细信息。包括商品明细、金额等。",
+	Args:      cobra.ExactArgs(1),
+	ValidArgs: []string{"orderId"},
 	Run: func(cmd *cobra.Command, args []string) {
-		if len(args) == 0 {
-			cmd.Help()
-			return
-		}
-
 		orderId := args[0]
 		orderInfo, err := apis.NewPurchaseApi().GetOrderInfo(orderId)
 		if err != nil {
 			cmd.PrintErrf("查询订单 %s 信息失败\n", orderId)
 			cmd.Help()
+			return
+		}
+
+		if orderInfo == nil {
+			cmd.Printf("查询到不到该订单信息")
 			return
 		}
 
@@ -136,41 +137,71 @@ SKU：%d
 	},
 }
 
-// 采购订单地址
-var orderAddressCmd = &cobra.Command{
-	Use:   "address [orderId]",
-	Short: "查询采购订单地址",
-	Long:  "根据订单号查询采购订单的地址信息",
-	Run: func(cmd *cobra.Command, args []string) {
-		if len(args) == 0 {
-			cmd.Help()
-			return
-		}
+// 分页查询订单
+var orderInfoPageCmd = func() *cobra.Command {
+	var opts apis.QueryPage
 
-		orderId := args[0]
-		orderInfo, err := apis.NewPurchaseApi().GetOrderInfo(orderId)
-		if err != nil {
-			cmd.PrintErrf("查询订单 %s 地址失败\n", orderId)
-			cmd.Help()
-			return
-		}
+	cmd := &cobra.Command{
+		Use:   "page",
+		Short: "分页查询采购订单",
+		Long:  "分页查询采购订单信息，支持日期、订单号、交易号、物流单号查询。仅返回订单的信息，不包含商品项、物流、地址等。",
+		Run: func(cmd *cobra.Command, args []string) {
+			if opts.TrackingNumber == "" && opts.TransactionNo == "" {
+				if opts.StartDate == "" || opts.EndDate == "" {
+					cmd.PrintErr("查询日期、交易号、物流单号不能同时为空")
+					cmd.Help()
+					return
+				}
+			}
 
-		address := orderInfo.OrdersAddress
-		orderAddressContent := fmt.Sprintf(`地址：%s
-国家：%s
-省份：%s
-市：%s
-区：%s
-邮编：%s
-		`, address.Address,
-			address.CountryName,
-			address.SecondRegionName,
-			address.ThirdRegionName,
-			address.FourthRegionName,
-			address.ZipCode)
+			if res, err := apis.NewPurchaseApi().PageList(opts); err != nil {
+				cmd.PrintErr("分页查询订单信息失败", err)
+				return
+			} else {
+				total := res.Data.Total
+				rows := res.Data.Rows
 
-		cmd.Print(orderAddressContent)
-	},
+				if len(rows) == 0 {
+					cmd.Print(fmt.Sprintf("当前页码：%d，页大小：%d，总数：%d\n\n无数据", opts.Page, opts.Limit, total))
+					return
+				}
+
+				contentList := make([]string, len(rows)+3)
+				contentList[0] = fmt.Sprintf("当前页码：%d，页大小：%d，总数：%d\n", opts.Page, opts.Limit, total)
+				contentList[1] = "|采购订单号|客户订单号|金额|下单时间|运费|类型|状态|仓库|"
+				contentList[2] = "|----|----|----|----|----|----|----|----|"
+				for i, row := range rows {
+					contentList[i+3] = fmt.Sprintf("|%s|%s|%.2f|%s|%.2f|%s|%s|%s|",
+						row.ID,
+						row.CustomerOrderId,
+						row.AmountActuallyPaid,
+						row.CrtTime,
+						row.Freight,
+						orderType[row.Type],
+						orderStatus[row.Status],
+						row.Warehouse,
+					)
+				}
+
+				cmd.Print(strings.Join(contentList, "\n"))
+			}
+
+		},
+	}
+
+	cmd.Flags().IntVarP(&opts.Page, "page", "p", 1, "页码(必填)")
+	cmd.Flags().IntVarP(&opts.Limit, "limit", "l", 10, "页大小(必填)")
+	cmd.Flags().StringVarP(&opts.StartDate, "start", "", "", "开始时间，格式：yyyy-MM-dd HH:mm:ss")
+	cmd.Flags().StringVarP(&opts.EndDate, "end", "", "", "结束时间，格式：yyyy-MM-dd HH:mm:ss")
+	// cmd.Flags().StringVarP(&opts.Id, "orderId", "", "", "订单号")
+	cmd.Flags().StringVarP(&opts.TransactionNo, "thirdOrderId", "", "", "交易号、第三方订单号")
+	cmd.Flags().StringVarP(&opts.TrackingNumber, "trackingNumber", "", "", "物流单号")
+
+	// 标记为必填
+	rootCmd.MarkFlagRequired("page")
+	rootCmd.MarkFlagRequired("limit")
+
+	return cmd
 }
 
 // 采购日志
@@ -189,6 +220,11 @@ var purchaseLogCmd = &cobra.Command{
 		if err != nil {
 			cmd.PrintErrf("查询订单 %s 采购日志失败\n", orderId)
 			cmd.Help()
+			return
+		}
+
+		if purchaseLogList == nil || len(*purchaseLogList) == 0 {
+			cmd.Print("未查询到该订单的采购日志")
 			return
 		}
 
@@ -221,6 +257,11 @@ var internationalLogisticsCmd = &cobra.Command{
 			return
 		}
 
+		if internationalLogisticsList == nil || len(*internationalLogisticsList) == 0 {
+			cmd.Print("未查询到该订单的国际段物流信息")
+			return
+		}
+
 		result := make([]string, len(*internationalLogisticsList))
 		for i, item := range *internationalLogisticsList {
 			trackInfoItemList := make([]string, len(item.TruckInfo.List)+2)
@@ -250,9 +291,11 @@ var internationalLogisticsCmd = &cobra.Command{
 }
 
 func init() {
+
+	orderInfoCmd.AddCommand(orderInfoPageCmd())
+
 	purchaseCmd.AddCommand(
 		orderInfoCmd,              // 订单
-		orderAddressCmd,           // 地址
 		purchaseLogCmd,            // 采购日志
 		internationalLogisticsCmd, // 国际物流轨迹
 	)

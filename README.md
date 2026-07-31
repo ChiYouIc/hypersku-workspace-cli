@@ -60,6 +60,8 @@ go mod tidy
 # Windows
 go build -o build/hypersku-cli.exe .
 
+go build -o "$HOME\.hypersku-cli\hypersku-cli.exe" .
+
 # 或使用 Makefile
 make build
 ```

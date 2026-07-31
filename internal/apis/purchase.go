@@ -20,10 +20,13 @@ func NewPurchaseApi() *Purchase {
 // ---------- 请求参数 ----------
 
 type QueryPage struct {
-	Page      int    `json:"page"`
-	Limit     int    `json:"limit"`
-	StartDate string `json:"startDate"`
-	EndDate   string `json:"endDate"`
+	Page           int    `json:"page"`
+	Limit          int    `json:"limit"`
+	StartDate      string `json:"startDate"`      // 结束时间
+	EndDate        string `json:"endDate"`        // 开始时间
+	Id             string `json:"id"`             // 订单号
+	TransactionNo  string `json:"transactionNo"`  // 第三方交易号
+	TrackingNumber string `json:"trackingNumber"` // 物流单号
 }
 
 // ---------- 响应体 ----------
@@ -31,19 +34,22 @@ type QueryPage struct {
 // Order 订单信息
 type Order struct {
 	ID                    string        `json:"id"`
-	OrderId               string        `json:"orderId"`
-	AmountActuallyPaid    float64       `json:"amountActuallyPaid"`
+	OrderId               string        `json:"orderId"`            // 订单号
+	CustomerOrderId       string        `json:"customerOrderId"`    // 客户订单号
+	AmountActuallyPaid    float64       `json:"amountActuallyPaid"` // 金额
+	CrtTime               string        `json:"crt_time"`           // 下单时间
+	Freight               float64       `json:"freight"`            // 运费
+	Type                  int           `json:"type"`               // 类型
+	Warehouse             string        `json:"warehouse"`          // 仓库
+	Status                int           `json:"status"`             // 状态
 	CanOrderReplenishment bool          `json:"canOrderReplenishment"`
 	Consumable            bool          `json:"consumable"`
-	CrtTime               string        `json:"crt_time"`
 	CustomerId            int64         `json:"customerId"`
 	CustomerLogisticsId   int           `json:"customerLogisticsId"`
 	CustomerLogisticsName string        `json:"customerLogisticsName"`
-	CustomerOrderId       string        `json:"customerOrderId"`
 	CustomerTag           int           `json:"customerTag"`
 	CustomerUsername      string        `json:"customerUsername"`
 	Discount              float64       `json:"discount"`
-	Freight               float64       `json:"freight"`
 	GoodsList             []GoodsItem   `json:"goodsList"`
 	GoodsNum              int           `json:"goodsNum"`
 	HasModifyPrice        bool          `json:"hasModifyPrice"`
@@ -64,7 +70,6 @@ type Order struct {
 	ShowMoreAddress       bool          `json:"showMoreAddress"`
 	Source                int           `json:"source"`
 	Split                 int           `json:"split"`
-	Status                int           `json:"status"`
 	StatusStr             string        `json:"statusStr"`
 	StockHasValueAdded    bool          `json:"stockHasValueAdded"`
 	StoreId               int           `json:"storeId"`
@@ -73,10 +78,8 @@ type Order struct {
 	ThirdName             string        `json:"thirdName"`
 	TimeZoneId            int           `json:"timeZoneId"`
 	TransferInventory     bool          `json:"transferInventory"`
-	Type                  int           `json:"type"`
 	Uname                 string        `json:"uname"`
 	UpdTime               string        `json:"upd_time"`
-	Warehouse             string        `json:"warehouse"`
 	WarehouseId           int           `json:"warehouseId"`
 }
 
@@ -193,6 +196,17 @@ func (p *Purchase) PageList(query QueryPage) (*ApiPageResponse[Order], error) {
 	}
 	if query.EndDate != "" {
 		params.Set("endDate", query.EndDate)
+	}
+	if query.Id != "" {
+		params.Set("id", query.Id)
+		params.Set("orderSearchText", query.Id)
+	}
+	if query.TransactionNo != "" {
+		params.Set("transactionNo", query.TransactionNo)
+	}
+	if query.TrackingNumber != "" {
+		params.Set("trackingNumber", query.TrackingNumber)
+		params.Set("logisticsSearchText", query.TrackingNumber)
 	}
 
 	// 拼接查询字符串

@@ -20,21 +20,13 @@ tags:
 |------|------|----------|----------|
 | 查询物流轨迹 | 根据运单号查询包裹的完整物流轨迹（时间、城市、事件） | `hypersku-cli logistics tracking <trackingNumber>` | [get-tracking.md](references/get-tracking.md) |
 
-## 意图判断决策树
+## 意图判断
 
 当用户输入包含以下关键词或意图时，使用对应的子命令：
 
-```
-用户输入
-├── 含 "物流" / "轨迹" / "快递" / "运输" / "到哪了" / "包裹" / "tracking"
-│   └── 执行 logistics tracking <trackingNumber> → 以表格展示物流时间线
-│
-├── 含 "单号" / "运单" / "tracking number"
-│   └── 提示用户提供完整的运单号
-│
-└── 未提供 trackingNumber
-    └── 提示用户提供物流单号
-```
+- 用户提到"物流/轨迹/快递/运输/到哪了/包裹/tracking"时，执行 `tracking <trackingNumber>` 以表格展示物流时间线。
+- 用户提到"单号/运单/tracking number"但未提供完整单号时，提示用户提供运单号。
+- 若未提供 trackingNumber，提示用户提供物流单号。
 
 ## 注意事项
 
