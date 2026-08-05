@@ -10,7 +10,7 @@ import (
 
 var (
 	// 订单类型
-	orderType = map[int]string{
+	OrderType = map[int]string{
 		1:  "商品订单",
 		2:  "会员收费服务订单",
 		3:  "退款",
@@ -106,7 +106,7 @@ var orderInfoCmd = &cobra.Command{
 			orderInfo.Warehouse,
 			orderInfo.AmountActuallyPaid,
 			orderInfo.Freight,
-			orderType[orderInfo.Type],
+			OrderType[orderInfo.Type],
 			orderStatus[orderInfo.Status])
 
 		goodsList := make([]string, len(orderInfo.GoodsList))
@@ -177,7 +177,7 @@ var orderInfoPageCmd = func() *cobra.Command {
 						row.AmountActuallyPaid,
 						row.CrtTime,
 						row.Freight,
-						orderType[row.Type],
+						OrderType[row.Type],
 						orderStatus[row.Status],
 						row.Warehouse,
 					)

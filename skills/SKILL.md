@@ -1,6 +1,6 @@
 ---
 name: hypersku-cli
-description: HyperSKU CLI 统一入口。当用户需要查询采购订单、客户订单、物流轨迹、1688售后工单等 Hypersku 业务数据时使用。覆盖采购管理、客户管理、物流追踪、售后管理四大能力域。
+description: HyperSKU CLI 统一入口。当用户需要查询采购订单、客户订单、物流轨迹、1688售后工单、国内第三方交易异常订单等 Hypersku 业务数据时使用。覆盖采购管理、客户管理、物流追踪、售后管理、物流异常管理五大能力域。
 version: 1.0.0
 author: owen
 tags:
@@ -44,6 +44,7 @@ hypersku-cli logistics tracking 1Z999AA10123456784
 | 客户管理 | 查询客户订单详情（商品/金额/币种）、物流单号、收货地址 | `hypersku-cli customer` | [customer/SKILL.md](customer/SKILL.md) |
 | 物流追踪 | 根据运单号查询国内快递的完整物流轨迹 | `hypersku-cli logistics` | [logistics/SKILL.md](logistics/SKILL.md) |
 | 售后管理 | 查询1688售后工单、售后商品、退款详情、留言记录 | `hypersku-cli after-sales` | [after-sales/SKILL.md](after-sales/SKILL.md) |
+| 物流异常管理 | 查询国内第三方交易异常订单（第三方采购单丢包裹/丢件/未签收等）及留言记录 | `hypersku-cli domestic-third-trade-exception` | [domestic-third-trade-exception/SKILL.md](domestic-third-trade-exception/SKILL.md) |
 
 ## 快速导航
 
@@ -51,10 +52,12 @@ hypersku-cli logistics tracking 1Z999AA10123456784
 - 用户问"客户订单"相关 → 参考 [customer](customer/SKILL.md)
 - 用户问"快递/物流轨迹"相关 → 参考 [logistics](logistics/SKILL.md)
 - 用户问"售后/退款/1688售后"相关 → 参考 [after-sales](after-sales/SKILL.md)
+- 用户问"物流异常/丢包裹/丢件/异常订单"相关 → 参考 [domestic-third-trade-exception](domestic-third-trade-exception/SKILL.md)
+- 用户问"异常怎么处理/排查原因/为什么丢包裹/下一步怎么办"相关 → 参考 [domestic-exception-handling](domestic-exception-handling/SKILL.md)
 
 ## 约束
 
 1. **查不到即止**：如果通过某个接口查询不到订单或数据，不要换用其他接口反复尝试，直接告知用户无结果。
 2. **参数必填**：所有子命令的必填参数（如 orderId、trackingNumber）缺失时，命令会自动显示帮助信息，需提示用户补全。
-3. **按需选择模块**：根据用户意图匹配对应模块——采购用 `purchase`，客户用 `customer order`，国内快递轨迹用 `logistics`，不要混用。
+3. **按需选择模块**：根据用户意图匹配对应模块——采购用 `purchase`，客户用 `customer order`，国内快递轨迹用 `logistics`，物流异常用 `domestic-third-trade-exception`，不要混用。
 4. **一次一问**：每次只执行一条命令，等待结果返回后再决定下一步，不要连续并行调用多个查询。
