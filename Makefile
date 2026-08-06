@@ -10,7 +10,7 @@ GO          := go
 GOFLAGS     := -ldflags "$(LDFLAGS)"
 OUTPUT_DIR  := build
 
-.PHONY: all build clean test lint run help
+.PHONY: all build build-linux build-macos clean test lint run tidy pack help
 
 all: clean build
 
@@ -38,6 +38,9 @@ lint: ## 代码检查
 
 run: ## 直接运行
 	$(GO) run . --help
+
+pack: ## 打包二进制与 skills 到用户目录（~\.hypersku-cli + ~\.agents\skills\ehub）
+	@powershell -ExecutionPolicy Bypass -File scripts/pack.ps1
 
 tidy: ## 整理依赖
 	$(GO) mod tidy
