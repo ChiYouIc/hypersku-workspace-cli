@@ -9,7 +9,7 @@ func TestWarehouse_GetWarehouseTracking(t *testing.T) {
 		wantErr        bool
 		wantLen        int
 	}{
-		{name: "Test Case 1", trackingNumber: "73719940096786", wantErr: false, wantLen: 1},
+		{name: "Test Case 1", trackingNumber: "79022253801788", wantErr: false, wantLen: 1},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

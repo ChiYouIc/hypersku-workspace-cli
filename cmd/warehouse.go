@@ -59,7 +59,7 @@ var getWarehouseTracking = &cobra.Command{
 				fmt.Fprintf(&sb, "仓库签收时间：%s\n", info.SignTime)
 			}
 			fmt.Fprintf(&sb, "入库状态：%s\n", instoreStatusMap[info.InstoreStatus])
-			fmt.Fprintf(&sb, "入库信息：%s\n", info.InputInfo)
+			// fmt.Fprintf(&sb, "入库信息：%s\n", info.InputInfo)
 			if info.InstoreTime != "" {
 				fmt.Fprintf(&sb, "入库时间：%s\n", info.InstoreTime)
 			}
