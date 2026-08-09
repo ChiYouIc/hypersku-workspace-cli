@@ -179,14 +179,52 @@ VAT：%s`,
 	},
 }
 
+// 查询订单退件
+var getCustomerOrderReturnInfo = &cobra.Command{
+	Use:   "return [customerOrderId]",
+	Short: "查询客户订单退件工单",
+	Long:  "通过客户订单号查询订单退件工单",
+	Args:  cobra.ExactArgs(1),
+	Run: func(cmd *cobra.Command, args []string) {
+		customerOrderId := args[0]
+		if returnInfo, err := apis.NewCustomerOrderReturnApi().GetOrderReturnInfo(customerOrderId); err != nil {
+			cmd.PrintErr(err)
+			return
+		} else {
+			if returnInfo == nil {
+				cmd.Print("未查询到退件记录\n")
+				return
+			}
+
+			var sb strings.Builder
+			fmt.Fprintln(&sb, "【退件工单详情】")
+			fmt.Fprintf(&sb, "客户订单号:%s\n", returnInfo.CustomerOrderID)
+			fmt.Fprintf(&sb, "运单号:%s\n", returnInfo.WaybillNumber)
+			fmt.Fprintf(&sb, "快递单号:%s\n", returnInfo.TrackingNumber)
+			fmt.Fprintf(&sb, "客户单号:%s\n", returnInfo.CustomerOrderNumber)
+			fmt.Fprintf(&sb, "国家:%s\n", returnInfo.CountryCode)
+			fmt.Fprintf(&sb, "入库时间:%s\n", returnInfo.InstorageCreatedOn)
+			fmt.Fprintf(&sb, "创建时间:%s\n", returnInfo.CrtTime)
+			fmt.Fprintf(&sb, "工单类型:%s\n", apis.WorkOrderType[returnInfo.WorkOrderType])
+			fmt.Fprintf(&sb, "工单状态:%s\n", apis.WorkOrderType[returnInfo.WorkOrderState])
+			fmt.Fprintf(&sb, "退件状态:%s\n", apis.ReturnStatus[returnInfo.Status])
+			fmt.Fprintf(&sb, "说明:%s\n", returnInfo.Describing)
+			fmt.Fprintf(&sb, "留言:%s\n", returnInfo.Remark)
+			fmt.Fprintf(&sb, "留言时间:%s\n", returnInfo.RemarkUpdateTime)
+			cmd.Println(sb.String())
+		}
+	},
+}
+
 func init() {
 	customerCmd.AddCommand(customerOrderCmd)
 
 	// 订单
 	customerOrderCmd.AddCommand(
-		getCustomerOrderInfo,      // 商品信息
-		getCustomerOrderLogistics, // 物流
-		getCustomerOrderAddress,   // 地址
+		getCustomerOrderInfo,       // 商品信息
+		getCustomerOrderLogistics,  // 物流
+		getCustomerOrderAddress,    // 地址
+		getCustomerOrderReturnInfo, // 退件
 	)
 
 	rootCmd.AddCommand(customerCmd)
