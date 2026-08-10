@@ -54,6 +54,7 @@ hypersku-cli logistics tracking 1Z999AA10123456784
 - 用户问"售后/退款/1688售后"相关 → 参考 [after-sales](after-sales/SKILL.md)
 - 用户问"物流异常/丢包裹/丢件/异常订单"相关 → 参考 [domestic-third-trade-exception](domestic-third-trade-exception/SKILL.md)
 - 用户问"异常怎么处理/排查原因/为什么丢包裹/下一步怎么办"相关 → 参考 [domestic-exception-handling](domestic-exception-handling/SKILL.md)
+- 用户问"申请售后/物流查询/物流赔偿/怎么索赔/理赔话术"相关 → 参考 [after-sales-apply](after-sales-apply/SKILL.md)
 
 ## 约束
 
