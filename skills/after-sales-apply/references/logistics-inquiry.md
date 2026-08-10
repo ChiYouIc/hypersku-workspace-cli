@@ -72,6 +72,10 @@ hypersku-cli customer order logistics <customerOrderId>
 
 ### 5. 校验未签收时长
 
+``` bash
+hypersku-cli logistics tracking <trackingNumber>
+```
+
 计算物流**多久未签收**：
 
 - 未签收时长**超过 30 天** → 返回**“未签收超过30天，不能发起物流查询售后”**。

@@ -58,7 +58,7 @@ flowchart TD
 ### 物流查询售后独有校验
 
 4. **校验国际物流轨迹**：`hypersku-cli customer order logistics <customerOrderId>`，未查询到轨迹或物流已签收 → 不支持发起查询售后。
-5. **校验未签收时长**：超过 30 天 → 不支持发起查询售后（应转物流赔偿售后）。
+5. **校验未签收时长**：`hypersku-cli logistics tracking <trackingNumber>`，超过 30 天 → 不支持发起查询售后（应转物流赔偿售后）。
 
 ## 申请工单表单项
 
