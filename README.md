@@ -13,18 +13,25 @@ hypersku-cli/
 │   ├── after_sales.go         # 售后管理命令
 │   ├── customer.go            # 客户管理命令
 │   ├── logistics.go           # 物流管理命令
-│   └── purchase.go            # 采购订单管理命令
+│   ├── purchase.go            # 采购订单管理命令
+│   ├── warehouse.go           # 仓库管理命令
+│   └── domestic_third_trade_exception.go  # 国内第三方交易异常订单管理命令
 ├── internal/                  # 内部业务逻辑（不对外暴露）
 │   ├── apis/                  # 第三方 API 封装
 │   │   ├── types.go           # 通用类型定义
 │   │   ├── after_sales.go     # 售后 API
 │   │   ├── customer.go        # 客户 API
+│   │   ├── customer_order_return.go  # 客户订单退件工单 API
 │   │   ├── logistics.go       # 物流 API
-│   │   └── purchase.go        # 采购 API
+│   │   ├── purchase.go        # 采购 API
+│   │   ├── warehouse.go       # 仓库 API
+│   │   └── domestic_third_trade_exception.go  # 国内第三方交易异常订单 API
 │   ├── config/                # 配置加载（config.json）
 │   ├── httpclient/            # HTTP 客户端基础封装
 │   └── version/               # 版本信息
 ├── pkg/                       # 可复用的公开包（预留）
+├── scripts/                   # 辅助脚本（打包发布等）
+│   └── pack.ps1               # 打包脚本：编译 + 同步 skills
 ├── skills/                    # Copilot Skill 使用文档
 ├── build/                     # 编译产物
 ├── main.go                    # 程序入口
@@ -62,6 +69,9 @@ go build -o "$HOME\.hypersku-cli\hypersku-cli.exe" .
 
 # 或使用 Makefile
 make build
+
+# 或使用 Powershell
+powershell -ExecutionPolicy Bypass -File scripts\pack.ps1
 ```
 
 ### 3. 运行
@@ -115,6 +125,8 @@ build\hypersku-cli.exe purchase info 123456
 | `customer` | 客户管理 |
 | `logistics` | 物流管理 |
 | `purchase` | 采购订单管理 |
+| `warehouse` | 仓库管理 |
+| `domestic-third-trade-exception` | 国内第三方交易异常订单管理 |
 
 #### 售后管理 `after-sales`
 
@@ -132,6 +144,7 @@ build\hypersku-cli.exe purchase info 123456
 | `order info <orderId>` | 查询订单信息 |
 | `order logistics <orderId>` | 查询订单物流信息 |
 | `order address <orderId>` | 查询订单地址信息 |
+| `order return <customerOrderId>` | 查询客户订单退件工单 |
 
 #### 物流管理 `logistics`
 
@@ -159,6 +172,29 @@ build\hypersku-cli.exe purchase info 123456
 | `--thirdOrderId` | `""` | 交易号、第三方订单号 |
 | `--trackingNumber` | `""` | 物流单号 |
 
+#### 仓库管理 `warehouse`
+
+| 命令 | 说明 |
+|------|------|
+| `tracking <trackingNumber>` | 查询仓库物流轨迹（快递/仓库签收、入库、物流轨迹、仓库操作） |
+
+#### 国内第三方交易异常订单管理 `domestic-third-trade-exception`
+
+| 命令 | 说明 |
+|------|------|
+| `page-list` | 分页查询国内第三方交易异常订单（含物流明细） |
+| `message-list <monitorOrderId> <monitorLogisticsId>` | 查询异常订单留言列表 |
+
+`domestic-third-trade-exception page-list` 支持以下过滤参数：
+
+| Flag | 默认值 | 说明 |
+|------|--------|------|
+| `-p, --page` | `1` | 页码 |
+| `-l, --limit` | `10` | 页大小 |
+| `-s, --hypersku-status` | `0` | 异常主状态（1-未发货，2-假发货，3-未到货，4-假签收，5-未签收，6-退件，7-丢件，8-未入库，9-丢包裹，10-无货） |
+| `-c, --hypersku-sub-status` | `[1,2]` | 异常子状态列表（1-待处理，2-处理中，3-已处理，4-已关闭，5-已拒绝） |
+| `-b, --buyer-id` | `""` | 买家 ID（可选） |
+
 ## Makefile 命令
 
 | 命令 | 说明 |
@@ -181,6 +217,7 @@ go test -v ./...
 # 运行指定包测试
 go test -v ./internal/httpclient/...
 go test -v ./cmd/...
+go test -v ./internal/apis/...
 
 # 查看测试覆盖率
 go test -cover ./...
