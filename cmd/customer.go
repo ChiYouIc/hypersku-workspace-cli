@@ -43,58 +43,39 @@ var getCustomerOrderInfo = &cobra.Command{
 			return
 		}
 
-		orderContent := fmt.Sprintf(`【订单】
-客户订单号：%s
-订单金额：%s%.2f
-实际金额：%s%.2f
-运费：%s%.2f
-增值服务费：%s%.2f
-税费：%s%.2f
-关税：%s%.2f
-币种：%s
-仓库：%s
-采购状态：%s
-支付时间：%s
-创建时间：%s`,
-			orderInfo.ID,
-			orderInfo.CurrencySymbol, orderInfo.Amount,
-			orderInfo.CurrencySymbol, orderInfo.ActualAmount,
-			orderInfo.CurrencySymbol, orderInfo.Freight,
-			orderInfo.CurrencySymbol, orderInfo.BrandingServiceAmount,
-			orderInfo.CurrencySymbol, orderInfo.TaxAmount,
-			orderInfo.CurrencySymbol, orderInfo.TariffAmount,
-			orderInfo.CurrencyCode,
-			orderInfo.WarehouseName,
-			orderStatus[orderInfo.PurchaseStatus],
-			orderInfo.PaymentTime,
-			orderInfo.CrtTime)
+		var sb strings.Builder
+		fmt.Fprintf(&sb, "【订单】\n")
+		fmt.Fprintf(&sb, "客户订单号：%s\n", orderInfo.ID)
+		fmt.Fprintf(&sb, "订单金额：%s%.2f\n", orderInfo.CurrencySymbol, orderInfo.Amount)
+		fmt.Fprintf(&sb, "实际金额：%s%.2f\n", orderInfo.CurrencySymbol, orderInfo.ActualAmount)
+		fmt.Fprintf(&sb, "运费：%s%.2f\n", orderInfo.CurrencySymbol, orderInfo.Freight)
+		fmt.Fprintf(&sb, "增值服务费：%s%.2f\n", orderInfo.CurrencySymbol, orderInfo.BrandingServiceAmount)
+		fmt.Fprintf(&sb, "税费：%s%.2f\n", orderInfo.CurrencySymbol, orderInfo.TaxAmount)
+		fmt.Fprintf(&sb, "关税：%s%.2f\n", orderInfo.CurrencySymbol, orderInfo.TariffAmount)
+		fmt.Fprintf(&sb, "币种：%s\n", orderInfo.CurrencyCode)
+		fmt.Fprintf(&sb, "仓库：%s\n", orderInfo.WarehouseName)
+		fmt.Fprintf(&sb, "状态：%s\n", apis.CustomerOrderStatus[orderInfo.Status])
+		fmt.Fprintf(&sb, "采购状态：%s\n", orderStatus[orderInfo.PurchaseStatus])
+		fmt.Fprintf(&sb, "支付时间：%s\n", orderInfo.PaymentTime)
+		fmt.Fprintf(&sb, "创建时间：%s\n", orderInfo.CrtTime)
+		fmt.Fprintln(&sb, "---")
 
-		goodsList := make([]string, len(orderInfo.GoodsList))
 		for i, goods := range orderInfo.GoodsList {
-			goodsList[i] = fmt.Sprintf(`【商品项 %d】
-SPU：%d
-SKU：%s
-名称：%s
-属性：%s
-图片：%s
-数量：%d
-销售价：%s%.2f
-单价：%s%.2f
-重量：%.2fg`,
-				i+1,
-				goods.ProductID,
-				goods.GoodsID,
-				goods.GoodsName,
-				goods.AttrStr,
-				goods.ImgURL,
-				goods.Num,
-				goods.CurrencySymbol, goods.SellingPrice,
-				goods.CurrencySymbol, goods.UnitPrice,
-				goods.Weight)
+
+			fmt.Fprintf(&sb, "【商品项 %d】\n", i+1)
+			fmt.Fprintf(&sb, "SPU：%d\n", goods.ProductID)
+			fmt.Fprintf(&sb, "SKU：%s\n", goods.GoodsID)
+			fmt.Fprintf(&sb, "名称：%s\n", goods.GoodsName)
+			fmt.Fprintf(&sb, "属性：%s\n", goods.AttrStr)
+			fmt.Fprintf(&sb, "图片：%s\n", goods.ImgURL)
+			fmt.Fprintf(&sb, "数量：%d\n", goods.Num)
+			fmt.Fprintf(&sb, "销售价：%s%.2f\n", goods.CurrencySymbol, goods.SellingPrice)
+			fmt.Fprintf(&sb, "单价：%s%.2f\n", goods.CurrencySymbol, goods.UnitPrice)
+			fmt.Fprintf(&sb, "重量：%.2fg\n", goods.Weight)
+			fmt.Fprintln(&sb, "---")
 		}
 
-		result := fmt.Sprintf("%s\n---\n%s", orderContent, strings.Join(goodsList, "\n\n"))
-		cmd.Print(result)
+		cmd.Print(sb.String())
 	},
 }
 

@@ -2,6 +2,21 @@ package apis
 
 import "github.com/hypersku/hypersku-cli/internal/httpclient"
 
+var CustomerOrderStatus = map[int]string{
+	1:  "待付款",
+	2:  "待采购",
+	3:  "待发货",
+	4:  "待收货",
+	5:  "待评价",
+	6:  "交易关闭",
+	7:  "退款中",
+	8:  "待找货",
+	9:  "支付中",
+	10: "超期",
+	11: "退件",
+	14: "分开发货",
+}
+
 type CustomerOrderApi struct {
 	http httpclient.Client
 }
@@ -25,6 +40,7 @@ type CustomerOrderInfo struct {
 	CurrencyCode          string                   `json:"currencyCode"`          // 币种
 	WarehouseName         string                   `json:"warehouseName"`         // 仓库
 	PurchaseStatus        int                      `json:"purchaseStatus"`        // 采购状态
+	Status                int                      `json:"status"`                // 客户订单状态
 	PaymentTime           string                   `json:"paymentTime"`           // 支付时间
 	CrtTime               string                   `json:"crtTime"`               // 订单创建时间
 	GoodsList             []CustomerOrderGoodsInfo `json:"goodsList"`             // 订单商品项
