@@ -1,24 +1,14 @@
----
-name: domestic-exception-handling
-description: 国内第三方交易异常订单处理能力。当用户需要排查/处理国内第三方交易异常订单（未发货/假发货/未到货/假签收/未签收/退件/丢件/未入库/丢包裹/无货）时，提供各异常类型的说明、问题排查步骤与下一步处理方案。
-version: 1.0.0
-author: owen
-tags:
-  - 异常处理
-  - 问题排查
-  - 处理流程
-  - 国内第三方交易
----
+# 国内第三方交易异常订单处理
 
-# 国内第三方交易异常订单处理 Skill
+> 本文为 [HyperSKU CLI 统一入口](../SKILL.md) 下的「异常处理」能力域详细引导。
 
-本 skill 用于指导处理国内第三方交易异常订单（HyperSKU 在第三方平台 1688/淘宝 等的采购单，其国内段物流异常在此监控）。覆盖**各异常类型的说明、问题排查步骤、下一步处理方案**，配合 `domestic-third-trade-exception` 查询能力使用。
+本文档用于指导处理国内第三方交易异常订单（HyperSKU 在第三方平台 1688/淘宝 等的采购单，其国内段物流异常在此监控）。覆盖**各异常类型的说明、问题排查步骤、下一步处理方案**，配合 `domestic-third-trade-exception` 查询能力使用。
 
-> **数据查询**：订单列表、物流明细、留言记录等数据请使用 [domestic-third-trade-exception](../domestic-third-trade-exception/SKILL.md) skill；本 skill 聚焦"判断类型 → 排查根因 → 决定下一步"。
+> **数据查询**：订单列表、物流明细、留言记录等数据请使用 [domestic-third-trade-exception](../domestic-third-trade-exception/README.md) 能力域；本文聚焦"判断类型 → 排查根因 → 决定下一步"。
 
 ## 触发时机
 
-当用户处于以下场景时使用本 skill：
+当用户处于以下场景时使用本文档：
 
 | 场景 | 用户会怎么说 |
 |------|-------------|

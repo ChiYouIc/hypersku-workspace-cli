@@ -72,6 +72,9 @@ make build
 
 # 或使用 Powershell
 powershell -ExecutionPolicy Bypass -File scripts\pack.ps1
+
+# 上传 skill
+powershell -ExecutionPolicy Bypass -File scripts\upload_skill.ps1
 ```
 
 ### 3. 运行

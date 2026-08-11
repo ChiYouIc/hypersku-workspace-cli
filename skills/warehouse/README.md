@@ -1,16 +1,6 @@
----
-name: warehouse
-description: Hypersku 仓库管理能力。当用户需要查询仓库物流轨迹（快递签收、仓库签收、入库、仓库操作）时使用。
-version: 1.0.0
-author: owen
-tags:
-  - 仓库
-  - 物流
-  - 签收
-  - 入库
----
+# 仓库物流轨迹查询
 
-# 仓库物流轨迹查询 Skill
+> 本文为 [HyperSKU CLI 统一入口](../SKILL.md) 下的「仓库管理」能力域详细引导。
 
 通过 `hypersku-cli warehouse` 子命令查询包裹的仓库侧物流轨迹，根据物流单号获取快递签收、仓库签收、入库、物流轨迹及仓库操作记录。
 

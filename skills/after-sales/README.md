@@ -1,16 +1,6 @@
----
-name: after-sales
-description: Hypersku 1688售后管理能力。当用户需要查询1688售后工单、售后商品项、售后详情、售后留言记录时使用。
-version: 1.0.0
-author: owen
-tags:
-  - 售后
-  - 1688
-  - 退款
-  - 纠纷
----
+# 1688售后管理
 
-# 1688售后管理 Skill
+> 本文为 [HyperSKU CLI 统一入口](../SKILL.md) 下的「售后管理」能力域详细引导。
 
 通过 `hypersku-cli after-sales` 子命令管理 Hypersku 平台上的 1688 售后工单，支持查询工单列表、售后商品、退款详情及留言记录。
 

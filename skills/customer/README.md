@@ -1,16 +1,6 @@
----
-name: customer
-description: Hypersku 客户管理能力。当用户需要查询客户订单的完整信息（商品明细/金额/币种）、物流单号与承运商、收货地址与税号/VAT 时使用。
-version: 1.0.0
-author: owen
-tags:
-  - 客户订单
-  - 商品明细
-  - 物流
-  - 收货地址
----
+# 客户订单管理
 
-# 客户订单管理 Skill
+> 本文为 [HyperSKU CLI 统一入口](../SKILL.md) 下的「客户管理」能力域详细引导。
 
 通过 `hypersku-cli customer order` 子命令管理 Hypersku 客户订单，支持查询订单详情（商品、金额）、物流信息及收货地址。
 
@@ -34,7 +24,7 @@ tags:
 ## 注意事项
 
 1. **orderId 必填**：所有子命令都需要传入客户订单号参数，未提供时会显示帮助信息并退出。
-2. **采购状态码**：`info` 输出中的采购状态使用与采购订单相同的状态码对照表（见 purchase SKILL.md）。
+2. **采购状态码**：`info` 输出中的采购状态使用与采购订单相同的状态码对照表（见 [purchase/README.md](../purchase/README.md)）。
 3. **物流 vs 物流轨迹**：`customer` 的 logistics 子命令只返回物流单号和承运商，不包含具体轨迹；如需查询国内快递轨迹，请使用 `hypersku-cli logistics tracking`。
 4. **国际化**：地址信息可能包含英文内容，具体取决于客户所在国家。
 5. **币种**：订单金额字段附带币种符号和币种代码，支持多币种展示。

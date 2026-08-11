@@ -70,7 +70,7 @@ if (Test-Path $SkillsDir) {
 }
 New-Item -ItemType Directory -Force -Path $SkillsDir | Out-Null
 
-# 复制 skills 下所有内容（SKILL.md 及各个子 skill 目录）
+# 复制 skills 下所有内容（SKILL.md 及各个子域 README.md 目录）
 Copy-Item -Path (Join-Path $SourceSkills '*') -Destination $SkillsDir -Recurse -Force
 Write-Host ("  OK skills 已安装: " + $SkillsDir) -ForegroundColor Green
 

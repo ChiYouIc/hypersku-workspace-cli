@@ -1,16 +1,6 @@
----
-name: purchase
-description: Hypersku 采购订单管理能力。当用户需要查询采购订单详情、分页搜索订单、采购日志、国际物流轨迹时使用。
-version: 1.0.0
-author: owen
-tags:
-  - 订单商品
-  - 分页查询
-  - 国际物流
-  - 采购日志
----
+# 采购订单管理
 
-# 采购订单管理 Skill
+> 本文为 [HyperSKU CLI 统一入口](../SKILL.md) 下的「采购管理」能力域详细引导。
 
 通过 `hypersku-cli purchase` 子命令管理 Hypersku 采购订单，支持按单号查询订单详情、按条件分页搜索订单、查看采购日志及国际物流轨迹。
 

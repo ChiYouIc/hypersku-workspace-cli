@@ -24,4 +24,4 @@ hypersku-cli purchase log <orderId>
 | 字段 | 说明 |
 |------|------|
 | 时间 | 状态变更时间 |
-| 状态 | 订单流转状态，见 SKILL.md 采购日志状态对照表 |
+| 状态 | 订单流转状态，见 README.md 采购日志状态对照表 |

@@ -1,6 +1,6 @@
 ---
 name: skill-writer
-description: '编写 Hypersku CLI 能力 Skill。当用户新增了 cmd 包下的命令，需要为其生成对应的 SKILL.md 及 references 参考文档时使用。适用场景：新增子命令后编写 skill、完善已有 skill、批量生成 skills。'
+description: '编写 Hypersku CLI 能力文档。当用户新增了 cmd 包下的命令，需要为其生成对应的能力域引导文档（skills/<name>/README.md）及 references 参考文档，并在统一入口 skills/SKILL.md 登记能力总览与检索引导时使用。适用场景：新增子命令后编写文档、完善已有文档、批量生成文档。'
 version: 1.0.0
 author: owen
 tags:
@@ -11,13 +11,13 @@ tags:
 
 # Skill 编写器
 
-根据 `cmd/` 包下的 cobra 命令定义，自动生成结构化的 SKILL.md 及其 references 参考文件到 `skills/<name>/` 目录。
+根据 `cmd/` 包下的 cobra 命令定义，自动生成结构化的能力域引导文档（`skills/<name>/README.md`）及其 references 参考文件，并在统一入口 `skills/SKILL.md` 中登记「能力总览」与「检索引导」。
 
 ## 何时使用
 
 - 用户在 `cmd/` 下新增了子命令，需要配套编写 skill 文档
-- 用户要求"为这个命令写个 skill"、"完善 SKILL.md"、"生成 skill 文档"
-- 批量扫描 `cmd/` 目录，为缺少 skill 的命令补全文档
+- 用户要求"为这个命令写个 skill"、"完善引导文档/README"、"生成 skill 文档"
+- 批量扫描 `cmd/` 目录，为缺少能力域引导文档的命令补全文档
 
 ## 工作流程
 
@@ -51,22 +51,14 @@ tags:
 2. 目标目录：`skills/<name>/`
 3. 如果目录已存在，以完善模式进行，询问用户需要更新哪些部分
 
-### 第四步：编写 SKILL.md
+### 第四步：编写子域引导文档（README.md）
 
-按以下结构编写，参考 [purchase SKILL.md](../purchase/SKILL.md) 作为模板：
+按以下结构编写，参考 [purchase/README.md](../../../skills/purchase/README.md) 作为模板（各能力域引导文档均为**无 frontmatter** 的 README.md，元数据统一维护在 `skills/SKILL.md`）：
 
 ```markdown
----
-name: <skill-name>
-description: <一句话能力概括 + 触发关键词>
-version: 1.0.0
-author: owen
-tags:
-  - <标签1>
-  - <标签2>
----
-
 # <中文标题>
+
+> 本文为 [HyperSKU CLI 统一入口](../SKILL.md) 下的「<能力域名>」详细引导。
 
 <一句话简介，说明通过哪个 CLI 命令实现什么能力>
 
@@ -89,11 +81,11 @@ tags:
 <列出参数约束、API 依赖、特殊场景处理等>
 ```
 
-#### description 编写要点
+#### 入口登记要点（skills/SKILL.md）
 
-- 必须包含"当用户需要..."的触发句式
-- 关键字覆盖所有子命令的能力域（如"商品/物流/地址/日志"）
-- 不超过 1024 字符
+- 在 `skills/SKILL.md` 的「能力总览」表追加一行（模块/用途/命令前缀/README 链接）
+- 在「检索引导」按用户问法关键词追加映射行（意图关键词 → 模块 → 命令 → 文档）
+- 入口 frontmatter 的 `description` 需覆盖新增能力域的关键词
 
 #### 能力总览编写要点
 
@@ -143,18 +135,18 @@ tags:
 
 完成后检查以下项目：
 
-- [ ] frontmatter 中 `name` 与文件夹名一致
-- [ ] `description` 包含触发关键词
+- [ ] 子域引导文档无 frontmatter（元数据统一维护在 `skills/SKILL.md`）
 - [ ] 能力总览表每行对应一个子命令
 - [ ] 参考文件路径使用相对路径 `references/xxx.md`
 - [ ] 每个子命令都有对应的 reference 文件
-- [ ] SKILL.md 正文不超过 500 行（保持渐进加载友好）
+- [ ] README.md 正文不超过 500 行（保持渐进加载友好）
+- [ ] `skills/SKILL.md` 的能力总览与检索引导已登记新能力域
 - [ ] 无孤立无用的对照表（如不需要的枚举表已移除）
 
 ## 约束
 
-1. **命名一致**：skill 文件夹名、`name` 字段、CLI 命令的 `Use` 值三者必需一致。
-2. **引用路径**：始终使用 `./` 开头的相对路径引用 references。
-3. **渐进加载**：输出示例等详细内容放 references，SKILL.md 只保留概要和决策逻辑。
+1. **命名一致**：子域文件夹名与 CLI 命令的 `Use` 值一致；`name`/`description` 统一维护在 `skills/SKILL.md` 入口。
+2. **引用路径**：始终使用相对路径引用 references 与入口（`references/xxx.md`、`../SKILL.md`）。
+3. **渐进加载**：输出示例等详细内容放 references，README.md 只保留概要和决策逻辑；`skills/SKILL.md` 只保留入口索引与检索引导。
 4. **中文优先**：面向中文用户，正文使用中文，代码/命令使用英文。
 5. **基于代码**：所有输出格式必须与 `cmd/*.go` 中的实际代码一致，不得凭空编造。

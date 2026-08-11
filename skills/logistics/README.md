@@ -1,16 +1,6 @@
----
-name: logistics
-description: Hypersku 物流轨迹查询能力。当用户需要查询国内快递物流轨迹、追踪包裹运输状态时使用。
-version: 1.0.0
-author: owen
-tags:
-  - 物流
-  - 轨迹
-  - 快递
-  - 追踪
----
+# 物流轨迹查询
 
-# 物流轨迹查询 Skill
+> 本文为 [HyperSKU CLI 统一入口](../SKILL.md) 下的「物流追踪」能力域详细引导。
 
 通过 `hypersku-cli logistics` 子命令查询包裹的国内物流轨迹，支持根据运单号获取完整的运输节点记录。
 

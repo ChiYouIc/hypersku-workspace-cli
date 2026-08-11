@@ -1,16 +1,6 @@
----
-name: domestic-third-trade-exception
-description: Hypersku 国内第三方交易异常订单管理能力。当用户需要查询国内第三方交易异常订单（第三方平台采购单的丢包裹/丢件/未签收/假发货/退件/未入库等）、查看异常订单留言记录时使用。
-version: 1.0.0
-author: owen
-tags:
-  - 物流异常
-  - 丢包裹
-  - 分页查询
-  - 留言
----
+# 国内第三方交易异常订单管理
 
-# 国内第三方交易异常订单管理 Skill
+> 本文为 [HyperSKU CLI 统一入口](../SKILL.md) 下的「物流异常管理」能力域详细引导。
 
 通过 `hypersku-cli domestic-third-trade-exception` 子命令管理 Hypersku 国内第三方交易异常订单（HyperSKU 在第三方平台如 1688/淘宝 采购产生的采购单，其国内段物流异常在此监控），支持按异常主/子状态分页查询异常订单及物流明细、查看异常订单的留言记录。
 
