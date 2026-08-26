@@ -45,7 +45,7 @@ hypersku-cli logistics tracking 1Z999AA10123456784
 | # | 模块 | 用途 | CLI 命令前缀 | 详细文档 |
 |---|------|------|-------------|----------|
 | 1 | 采购管理 | 查询采购订单详情、分页搜索、状态日志、国际物流轨迹 | `hypersku-cli purchase` | [purchase/README.md](purchase/README.md) |
-| 2 | 客户管理 | 查询客户基础信息（等级/店铺/预算），客户订单详情（商品/金额/币种）、物流单号、收货地址，及客户画像（订单统计/日订单数量/交易统计/交易流水） | `hypersku-cli customer` | [customer/README.md](customer/README.md) |
+| 2 | 客户管理 | 查询客户基础信息（等级/店铺/预算）与基础档案（邮箱/客户经理/注册/登录），客户订单详情（商品/金额/币种）、物流单号、收货地址，及客户画像（订单统计/日订单数量/交易统计/交易流水） | `hypersku-cli customer` | [customer/README.md](customer/README.md) |
 | 3 | 物流追踪 | 根据运单号查询国内快递完整物流轨迹 | `hypersku-cli logistics` | [logistics/README.md](logistics/README.md) |
 | 4 | 仓库管理 | 根据运单号查询仓库侧物流轨迹（快递签收/仓库签收/入库/仓库操作） | `hypersku-cli warehouse` | [warehouse/README.md](warehouse/README.md) |
 | 5 | 售后管理 | 查询1688售后工单、售后商品、退款详情、留言记录 | `hypersku-cli after-sales` | [after-sales/README.md](after-sales/README.md) |
@@ -65,7 +65,8 @@ hypersku-cli logistics tracking 1Z999AA10123456784
 | 采购订单搜索、列表、分页、有哪些订单 + 日期/交易号/物流单号 | 采购管理 | `hypersku-cli purchase info page [flags]` | [purchase/README.md](purchase/README.md) |
 | 采购日志、订单状态、进度、到哪一步了 | 采购管理 | `hypersku-cli purchase log <orderId>` | [purchase/README.md](purchase/README.md) |
 | 国际物流、国际段包裹轨迹、运输状态 | 采购管理 | `hypersku-cli purchase logistics <orderId>` | [purchase/README.md](purchase/README.md) |
-| 客户信息、客户等级、店铺数量、周广告预算、客户背景 + 客户ID | 客户管理 | `hypersku-cli customer info <customerId>` | [customer/README.md](customer/README.md) |
+| 客户信息、客户等级、店铺数量、周广告预算、客户背景 + 客户ID | 客户管理 | `hypersku-cli customer extends <customerId>` | [customer/README.md](customer/README.md) |
+| 客户档案、注册时间、注册区域、最近登录、总订单数、总购买金额 + 客户ID | 客户管理 | `hypersku-cli customer detail <customerId>` | [customer/README.md](customer/README.md) |
 | 客户订单详情、客户买了什么、金额、币种 | 客户管理 | `hypersku-cli customer order info <orderId>` | [customer/README.md](customer/README.md) |
 | 客户订单物流单号、承运商（不含轨迹） | 客户管理 | `hypersku-cli customer order logistics <orderId>` | [customer/README.md](customer/README.md) |
 | 收货地址、收件人、税号、VAT、邮编 | 客户管理 | `hypersku-cli customer order address <orderId>` | [customer/README.md](customer/README.md) |

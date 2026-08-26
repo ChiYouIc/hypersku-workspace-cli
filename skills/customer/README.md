@@ -8,7 +8,8 @@
 
 | 能力 | 用途 | CLI 命令 | 参考文件 |
 |------|------|----------|----------|
-| 查询客户信息 | 根据客户 ID 查询等级、近 30 天订单数、店铺数、Dropshipping 时长、周广告预算等 | `hypersku-cli customer info <customerId>` | [customer-info.md](references/customer-info.md) |
+| 查询客户扩展信息 | 根据客户 ID 查询等级、近 30 天订单数、店铺数、Dropshipping 时长、周广告预算等 | `hypersku-cli customer extends <customerId>` | [customer-extends.md](references/customer-extends.md) |
+| 查询客户档案 | 根据客户 ID 查询注册时间、注册区域、最近登录时间、总订单数与总购买金额等基础档案 | `hypersku-cli customer detail <customerId>` | [customer-detail.md](references/customer-detail.md) |
 | 查询订单详情 | 根据客户订单号查询订单概要 + 商品明细（含金额、币种、仓库、采购状态等） | `hypersku-cli customer order info <orderId>` | [info.md](references/info.md) |
 | 查询订单物流 | 根据客户订单号查询物流单号及承运商（不含轨迹详情） | `hypersku-cli customer order logistics <orderId>` | [logistics.md](references/logistics.md) |
 | 查询收货地址 | 根据客户订单号查询收货人、地址、税号、VAT 等信息 | `hypersku-cli customer order address <orderId>` | [address.md](references/address.md) |
@@ -22,7 +23,8 @@
 
 当用户输入包含以下关键词或意图时，使用对应的子命令：
 
-- 用户提到"客户信息/客户等级/店铺数量/广告预算/客户背景"时，执行 `info <customerId>` 展示客户基础信息。
+- 用户提到"客户信息/客户等级/店铺数量/广告预算/客户背景"时，执行 `extends <customerId>` 展示客户扩展信息。
+- 用户提到"客户档案/注册时间/注册区域/最近登录/总订单数/总购买金额"时，执行 `detail <customerId>` 展示客户基础档案。
 - 用户提到"客户订单/订单详情/商品/买了什么/金额"时，执行 `order info <orderId>` 展示订单概要及商品明细。
 - 用户提到"物流/单号/承运商/快递/tracking"时，执行 `order logistics <orderId>` 以表格展示物流单号与承运商。
 - 用户提到"地址/收货/税号/VAT/邮编/收件人"时，执行 `order address <orderId>` 展示收货地址详情。
