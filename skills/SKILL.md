@@ -1,6 +1,6 @@
 ---
 name: hypersku-cli
-description: HyperSKU CLI 统一入口（所有子 skill 入口合并于此）。当用户需要查询采购订单、客户订单、物流轨迹、仓库物流、1688售后工单、国内第三方交易异常订单，或需要处理物流异常（排查/处理）、申请售后（物流查询/赔偿）时使用。覆盖采购管理、客户管理、物流追踪、仓库管理、售后管理、物流异常管理、异常处理、申请售后八大能力域。
+description: HyperSKU CLI 统一入口（所有子 skill 入口合并于此）。当用户需要查询采购订单、客户订单、物流轨迹、仓库物流、1688售后工单、国内第三方交易异常订单，或需要处理物流异常（排查/处理）、申请售后（物流查询/赔偿），或需要查询客户画像（订单统计/日订单数量/交易统计/交易流水）时使用。覆盖采购管理、客户管理、物流追踪、仓库管理、售后管理、物流异常管理、异常处理、申请售后八大能力域。
 version: 2.0.0
 author: owen
 tags:
@@ -45,7 +45,7 @@ hypersku-cli logistics tracking 1Z999AA10123456784
 | # | 模块 | 用途 | CLI 命令前缀 | 详细文档 |
 |---|------|------|-------------|----------|
 | 1 | 采购管理 | 查询采购订单详情、分页搜索、状态日志、国际物流轨迹 | `hypersku-cli purchase` | [purchase/README.md](purchase/README.md) |
-| 2 | 客户管理 | 查询客户订单详情（商品/金额/币种）、物流单号、收货地址 | `hypersku-cli customer order` | [customer/README.md](customer/README.md) |
+| 2 | 客户管理 | 查询客户基础信息（等级/店铺/预算），客户订单详情（商品/金额/币种）、物流单号、收货地址，及客户画像（订单统计/日订单数量/交易统计/交易流水） | `hypersku-cli customer` | [customer/README.md](customer/README.md) |
 | 3 | 物流追踪 | 根据运单号查询国内快递完整物流轨迹 | `hypersku-cli logistics` | [logistics/README.md](logistics/README.md) |
 | 4 | 仓库管理 | 根据运单号查询仓库侧物流轨迹（快递签收/仓库签收/入库/仓库操作） | `hypersku-cli warehouse` | [warehouse/README.md](warehouse/README.md) |
 | 5 | 售后管理 | 查询1688售后工单、售后商品、退款详情、留言记录 | `hypersku-cli after-sales` | [after-sales/README.md](after-sales/README.md) |
@@ -65,9 +65,15 @@ hypersku-cli logistics tracking 1Z999AA10123456784
 | 采购订单搜索、列表、分页、有哪些订单 + 日期/交易号/物流单号 | 采购管理 | `hypersku-cli purchase info page [flags]` | [purchase/README.md](purchase/README.md) |
 | 采购日志、订单状态、进度、到哪一步了 | 采购管理 | `hypersku-cli purchase log <orderId>` | [purchase/README.md](purchase/README.md) |
 | 国际物流、国际段包裹轨迹、运输状态 | 采购管理 | `hypersku-cli purchase logistics <orderId>` | [purchase/README.md](purchase/README.md) |
+| 客户信息、客户等级、店铺数量、周广告预算、客户背景 + 客户ID | 客户管理 | `hypersku-cli customer info <customerId>` | [customer/README.md](customer/README.md) |
 | 客户订单详情、客户买了什么、金额、币种 | 客户管理 | `hypersku-cli customer order info <orderId>` | [customer/README.md](customer/README.md) |
 | 客户订单物流单号、承运商（不含轨迹） | 客户管理 | `hypersku-cli customer order logistics <orderId>` | [customer/README.md](customer/README.md) |
 | 收货地址、收件人、税号、VAT、邮编 | 客户管理 | `hypersku-cli customer order address <orderId>` | [customer/README.md](customer/README.md) |
+| 客户订单退件、退件工单、退货记录 + 客户订单号 | 客户管理 | `hypersku-cli customer order return <customerOrderId>` | [customer/README.md](customer/README.md) |
+| 客户画像、订单统计、日均订单、总订单数 + 客户ID/日期范围 | 客户管理 | `hypersku-cli customer profile order count <customerId> --start <date> --end <date>` | [customer/README.md](customer/README.md) |
+| 日订单数量、每天下单多少、付款/履约/超期/退款订单数 + 客户ID/日期范围 | 客户管理 | `hypersku-cli customer profile order daily <customerId> --start <date> --end <date>` | [customer/README.md](customer/README.md) |
+| 交易统计、交易额、成交额、退款金额、客单价 + 客户ID/日期范围 | 客户管理 | `hypersku-cli customer profile transaction count <customerId> --start <date> --end <date>` | [customer/README.md](customer/README.md) |
+| 交易流水、每日交易明细、手续费 + 客户ID/日期范围 | 客户管理 | `hypersku-cli customer profile transaction bills <customerId> --start <date> --end <date>` | [customer/README.md](customer/README.md) |
 | 国内快递轨迹、运单号 tracking、包裹到哪了 | 物流追踪 | `hypersku-cli logistics tracking <trackingNumber>` | [logistics/README.md](logistics/README.md) |
 | 仓库物流、仓库签收、入库、仓库操作、到仓 | 仓库管理 | `hypersku-cli warehouse tracking <trackingNumber>` | [warehouse/README.md](warehouse/README.md) |
 | 1688售后工单、退款列表 + 1688订单号/交易号 | 售后管理 | `hypersku-cli after-sales 1688 <thirdOrderId>` | [after-sales/README.md](after-sales/README.md) |
@@ -88,7 +94,7 @@ hypersku-cli logistics tracking 1Z999AA10123456784
 ## 详细文档索引
 
 - [purchase/README.md](purchase/README.md) — 采购订单管理（详情/分页/日志/国际物流）
-- [customer/README.md](customer/README.md) — 客户订单管理（详情/物流/地址）
+- [customer/README.md](customer/README.md) — 客户信息、客户订单管理（详情/物流/地址/退件）与客户画像（订单统计/日订单/交易统计/交易流水）
 - [logistics/README.md](logistics/README.md) — 国内快递物流轨迹
 - [warehouse/README.md](warehouse/README.md) — 仓库物流轨迹（签收/入库/仓库操作）
 - [after-sales/README.md](after-sales/README.md) — 1688 售后管理（工单/商品/详情/留言）

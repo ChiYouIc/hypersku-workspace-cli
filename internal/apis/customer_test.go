@@ -6,48 +6,36 @@ import (
 	"github.com/hypersku/hypersku-cli/internal/apis"
 )
 
-func TestCustomerOrderApi_GetOrderInfo(t *testing.T) {
-	// 测试用例表
+func TestCustomerInfoApi_GetCustomerInfo(t *testing.T) {
 	tests := []struct {
-		name    string                  // 测试用例名称
-		orderId string                  // 测试参数
-		want    *apis.CustomerOrderInfo // 期望值
-		wantErr bool                    // 期望异常
+		name string // description of this test case
+		// Named input parameters for target function.
+		customerId string
+		wantErr    bool
 	}{
-		{
-			name:    "获取订单信息",
-			orderId: "1152751001053192198",
-			wantErr: false,
-		},
-		{
-			name:    "获取订单不存在",
-			orderId: "11527510010531921982",
-			wantErr: true,
-		},
+		{name: "获取客户信息", customerId: "1000249401", wantErr: false},
+		{name: "客户不存在", customerId: "9999999999", wantErr: true},
 	}
-	// 遍历测试用例表
 	for _, tt := range tests {
-
-		// 执行测试用例
 		t.Run(tt.name, func(t *testing.T) {
-			o := apis.NewCustomerOrderApi()
-			got, gotErr := o.GetOrderInfo(tt.orderId)
+			api := apis.NewCustomerInfoApi()
+			got, gotErr := api.GetCustomerInfo(tt.customerId)
 			if gotErr != nil {
 				if !tt.wantErr {
-					t.Errorf("GetOrderInfo() 失败: %v", gotErr)
+					t.Errorf("GetCustomerInfo() failed: %v", gotErr)
 				}
 				return
 			}
-
-			// 期望错误
 			if tt.wantErr {
-				t.Fatal("GetOrderInfo() succeeded unexpectedly")
+				t.Fatal("GetCustomerInfo() succeeded unexpectedly")
 			}
-
-			// 期望值比较
-			if got.ID != tt.orderId {
-				t.Errorf("GetOrderInfo() = %v, 期望 %v", got, tt.want)
+			if got == nil {
+				t.Errorf("GetCustomerInfo() return nil")
+				return
 			}
+			t.Logf("客户信息: level=%s orderNum=%d storeNum=%d durationType=%s weeklyAdBudget=%s",
+				got.Level, got.OrderNum, got.StoreNum,
+				apis.DurationTypeMap[got.DurationType], apis.WeeklyAdBudgetMap[got.WeeklyAdBudget])
 		})
 	}
 }

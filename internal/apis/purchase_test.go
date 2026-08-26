@@ -13,7 +13,7 @@ func TestMain(m *testing.M) {
 	httpclient.Reset()
 	httpclient.Init(
 		httpclient.WithBaseURL("https://pur.hyperoms.com"),
-		httpclient.WithHeader("authorization", "eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJvd2VuLmNoaUBldGFpbGVyaHViLmNvbSIsInVzZXJJZCI6IjE4MCIsIm5hbWUiOiLmsaDlj4siLCJjaWQiOiIxMDAiLCJ0eXBlIjoiMSIsImV4cCI6MTc4NjU5MTc3M30.BREeqG7nOXpGoi8mxh83bYLK451pcZEtluu37WOR5wkM0YQCzVaJF33lFXM7pB3nWkeCycmDQqd2cHAk4e-GOG21o_30vz37N0dXtt3fmRG8ZsG2e6wqMr8vaqq3HaDSeFaAuh-PXPUpi7xx29DJj9eMiWec13gQahpL9eFqebs"),
+		httpclient.WithHeader("authorization", "eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJvd2VuLmNoaUBldGFpbGVyaHViLmNvbSIsInVzZXJJZCI6IjE4MCIsIm5hbWUiOiLmsaDlj4siLCJjaWQiOiIxMDAiLCJ0eXBlIjoiMSIsImV4cCI6MTc4ODI1NDg3MX0.jzOOntZZCiUFAlSwyZdBlbUqRYbzDUzJlL3bBcf6DpwBmTu_w370DhEyv7gt88uaVt8Fb7COgTVs90UsbBKO4fl60AWh5A_gNVSe5v2WOyFRXfAXDMH2Rt83FTnuSO-jTQEOXhk3pFDlRScVVUnCKz66eh-CgTb0SiGFeAHCYmM"),
 	)
 
 	code := m.Run()
