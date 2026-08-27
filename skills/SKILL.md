@@ -1,6 +1,6 @@
 ---
 name: hypersku-cli
-description: HyperSKU CLI 统一入口（所有子 skill 入口合并于此）。当用户需要查询采购订单、客户订单、客户档案（是否已支付/绑定店铺/DS 经验/广告预算/细分市场/客户标签/渠道来源）、物流轨迹、仓库物流、1688售后工单、国内第三方交易异常订单，或需要处理物流异常（排查/处理）、申请售后（物流查询/赔偿），或需要查询客户画像（订单统计/日订单数量/交易统计/交易流水）时使用。覆盖采购管理、客户管理、物流追踪、仓库管理、售后管理、物流异常管理、异常处理、申请售后八大能力域。
+description: HyperSKU CLI 统一入口（所有子 skill 入口合并于此）。当用户需要查询采购订单、客户订单、客户档案（是否已支付/绑定店铺/联系方式/姓名/DS 经验/广告预算/细分市场/客户标签/渠道来源）、物流轨迹、仓库物流、1688售后工单、国内第三方交易异常订单，或需要处理物流异常（排查/处理）、申请售后（物流查询/赔偿），或需要查询客户画像（订单统计/日订单数量/交易统计/交易流水），或需要生成客户画像/线索评估/跟进优先级/转化策略/销售话术/促绑店/促首单时使用。覆盖采购管理、客户管理、物流追踪、仓库管理、售后管理、物流异常管理、异常处理、申请售后八大能力域及客户画像分析。
 version: 2.0.0
 author: owen
 tags:
@@ -52,6 +52,7 @@ hypersku-cli logistics tracking 1Z999AA10123456784
 | 6 | 物流异常管理 | 查询国内第三方交易异常订单（丢包裹/丢件/未签收等）及留言记录 | `hypersku-cli domestic-third-trade-exception` | [domestic-third-trade-exception/README.md](domestic-third-trade-exception/README.md) |
 | 7 | 异常处理 | 排查/处理异常订单（未发货/假发货/未到货/假签收/未签收/退件/丢件/未入库/丢包裹/无货） | 流程引导（配合 6 查询） | [domestic-exception-handling/README.md](domestic-exception-handling/README.md) |
 | 8 | 申请售后 | 国际物流未签收发起售后（未签收 < 30 天走物流查询，> 30 天走物流赔偿） | 流程引导（配合 2/3 查询） | [after-sales-apply/README.md](after-sales-apply/README.md) |
+| 9 | 客户画像分析 | 分析已注册未消费客户（评估线索质量/意向热度/跟进优先级/转化策略/销售话术/促绑店/促首单） | 分析引导（配合 2 查询） | [customer-profile-analysis/README.md](customer-profile-analysis/README.md) |
 
 ## 检索引导
 
@@ -65,7 +66,7 @@ hypersku-cli logistics tracking 1Z999AA10123456784
 | 采购订单搜索、列表、分页、有哪些订单 + 日期/交易号/物流单号 | 采购管理 | `hypersku-cli purchase info page [flags]` | [purchase/README.md](purchase/README.md) |
 | 采购日志、订单状态、进度、到哪一步了 | 采购管理 | `hypersku-cli purchase log <orderId>` | [purchase/README.md](purchase/README.md) |
 | 国际物流、国际段包裹轨迹、运输状态 | 采购管理 | `hypersku-cli purchase logistics <orderId>` | [purchase/README.md](purchase/README.md) |
-| 客户档案、是否有已支付订单、绑定店铺、DS 经验、广告预算、细分市场、客户标签、渠道来源 + 客户ID | 客户管理 | `hypersku-cli customer detail <customerId>` | [customer/README.md](customer/README.md) |
+| 客户档案、是否有已支付订单、绑定店铺、联系方式、姓名、DS 经验、广告预算、细分市场、客户标签、渠道来源 + 客户ID | 客户管理 | `hypersku-cli customer detail <customerId>` | [customer/README.md](customer/README.md) |
 | 客户订单详情、客户买了什么、金额、币种 | 客户管理 | `hypersku-cli customer order info <orderId>` | [customer/README.md](customer/README.md) |
 | 客户订单物流单号、承运商（不含轨迹） | 客户管理 | `hypersku-cli customer order logistics <orderId>` | [customer/README.md](customer/README.md) |
 | 收货地址、收件人、税号、VAT、邮编 | 客户管理 | `hypersku-cli customer order address <orderId>` | [customer/README.md](customer/README.md) |
@@ -90,6 +91,7 @@ hypersku-cli logistics tracking 1Z999AA10123456784
 | 异常是什么意思、为什么丢包裹/假发货、怎么排查、下一步怎么办、要不要退款/补发 | 异常处理 | `domestic-third-trade-exception page-list` / `message-list` | [domestic-exception-handling/README.md](domestic-exception-handling/README.md) |
 | 物流不动了、轨迹不更新、申请物流查询（未签收 < 30 天） | 申请售后 | `customer order info` / `logistics`、`logistics tracking` | [after-sales-apply/README.md](after-sales-apply/README.md) |
 | 快递丢了要赔偿、索赔、理赔（未签收 > 30 天） | 申请售后 | `customer order info`、`customer order return` | [after-sales-apply/README.md](after-sales-apply/README.md) |
+| 生成画像、画像分析、线索评估、意向热度、跟进优先级、转化策略、销售话术、促绑店、促首单 + 客户ID | 客户画像分析 | `customer detail <customerId>` | [customer-profile-analysis/README.md](customer-profile-analysis/README.md) |
 
 ## 详细文档索引
 
@@ -101,6 +103,7 @@ hypersku-cli logistics tracking 1Z999AA10123456784
 - [domestic-third-trade-exception/README.md](domestic-third-trade-exception/README.md) — 国内第三方交易异常订单查询
 - [domestic-exception-handling/README.md](domestic-exception-handling/README.md) — 异常订单处理（排查/处理流程）
 - [after-sales-apply/README.md](after-sales-apply/README.md) — 申请售后（物流查询/赔偿）
+- [customer-profile-analysis/README.md](customer-profile-analysis/README.md) — 客户画像分析（新用户转化：线索质量/意向热度/跟进优先级/转化策略/销售话术）
 
 ## 约束
 
