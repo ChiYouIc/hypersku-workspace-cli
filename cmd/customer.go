@@ -37,6 +37,8 @@ var getCustomerDetailCmd = &cobra.Command{
 		fmt.Fprintf(&sb, "客户ID：%d\n", info.CustomerID)
 		fmt.Fprintf(&sb, "是否有已支付订单：%s\n", boolText(info.HasOrder))
 		fmt.Fprintf(&sb, "绑定店铺：%s\n", nonEmptyOrNone(info.Stores))
+		fmt.Fprintf(&sb, "是否有联系方式：%s\n", boolText(info.HasContactWay))
+		fmt.Fprintf(&sb, "是否有姓名: %s\n", boolText(info.HasFirstName))
 		fmt.Fprintln(&sb, "【问卷信息】")
 		fmt.Fprintf(&sb, "DS 经验：%s\n", durationTypeText(info.EngagedTime))
 		fmt.Fprintf(&sb, "周广告预算：%s\n", weeklyAdBudgetText(info.WeeklyAdBudget))
