@@ -1,6 +1,6 @@
 ---
 name: hypersku-cli
-description: HyperSKU CLI 统一入口（所有子 skill 入口合并于此）。当用户需要查询采购订单、客户订单、物流轨迹、仓库物流、1688售后工单、国内第三方交易异常订单，或需要处理物流异常（排查/处理）、申请售后（物流查询/赔偿），或需要查询客户画像（订单统计/日订单数量/交易统计/交易流水）时使用。覆盖采购管理、客户管理、物流追踪、仓库管理、售后管理、物流异常管理、异常处理、申请售后八大能力域。
+description: HyperSKU CLI 统一入口（所有子 skill 入口合并于此）。当用户需要查询采购订单、客户订单、客户档案（是否已支付/绑定店铺/DS 经验/广告预算/细分市场/客户标签/渠道来源）、物流轨迹、仓库物流、1688售后工单、国内第三方交易异常订单，或需要处理物流异常（排查/处理）、申请售后（物流查询/赔偿），或需要查询客户画像（订单统计/日订单数量/交易统计/交易流水）时使用。覆盖采购管理、客户管理、物流追踪、仓库管理、售后管理、物流异常管理、异常处理、申请售后八大能力域。
 version: 2.0.0
 author: owen
 tags:
@@ -65,7 +65,7 @@ hypersku-cli logistics tracking 1Z999AA10123456784
 | 采购订单搜索、列表、分页、有哪些订单 + 日期/交易号/物流单号 | 采购管理 | `hypersku-cli purchase info page [flags]` | [purchase/README.md](purchase/README.md) |
 | 采购日志、订单状态、进度、到哪一步了 | 采购管理 | `hypersku-cli purchase log <orderId>` | [purchase/README.md](purchase/README.md) |
 | 国际物流、国际段包裹轨迹、运输状态 | 采购管理 | `hypersku-cli purchase logistics <orderId>` | [purchase/README.md](purchase/README.md) |
-| 客户档案、注册时间、注册区域、最近登录、总订单数、总购买金额 + 客户ID | 客户管理 | `hypersku-cli customer detail <customerId>` | [customer/README.md](customer/README.md) |
+| 客户档案、是否有已支付订单、绑定店铺、DS 经验、广告预算、细分市场、客户标签、渠道来源 + 客户ID | 客户管理 | `hypersku-cli customer detail <customerId>` | [customer/README.md](customer/README.md) |
 | 客户订单详情、客户买了什么、金额、币种 | 客户管理 | `hypersku-cli customer order info <orderId>` | [customer/README.md](customer/README.md) |
 | 客户订单物流单号、承运商（不含轨迹） | 客户管理 | `hypersku-cli customer order logistics <orderId>` | [customer/README.md](customer/README.md) |
 | 收货地址、收件人、税号、VAT、邮编 | 客户管理 | `hypersku-cli customer order address <orderId>` | [customer/README.md](customer/README.md) |
