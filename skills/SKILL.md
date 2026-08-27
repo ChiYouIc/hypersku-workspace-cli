@@ -65,7 +65,6 @@ hypersku-cli logistics tracking 1Z999AA10123456784
 | 采购订单搜索、列表、分页、有哪些订单 + 日期/交易号/物流单号 | 采购管理 | `hypersku-cli purchase info page [flags]` | [purchase/README.md](purchase/README.md) |
 | 采购日志、订单状态、进度、到哪一步了 | 采购管理 | `hypersku-cli purchase log <orderId>` | [purchase/README.md](purchase/README.md) |
 | 国际物流、国际段包裹轨迹、运输状态 | 采购管理 | `hypersku-cli purchase logistics <orderId>` | [purchase/README.md](purchase/README.md) |
-| 客户信息、客户等级、店铺数量、周广告预算、客户背景 + 客户ID | 客户管理 | `hypersku-cli customer extends <customerId>` | [customer/README.md](customer/README.md) |
 | 客户档案、注册时间、注册区域、最近登录、总订单数、总购买金额 + 客户ID | 客户管理 | `hypersku-cli customer detail <customerId>` | [customer/README.md](customer/README.md) |
 | 客户订单详情、客户买了什么、金额、币种 | 客户管理 | `hypersku-cli customer order info <orderId>` | [customer/README.md](customer/README.md) |
 | 客户订单物流单号、承运商（不含轨迹） | 客户管理 | `hypersku-cli customer order logistics <orderId>` | [customer/README.md](customer/README.md) |

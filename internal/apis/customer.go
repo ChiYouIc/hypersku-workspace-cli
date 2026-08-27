@@ -40,73 +40,55 @@ func NewCustomerInfoApi() *CustomerInfoApi {
 	}
 }
 
-type CustomerExtendInfo struct {
-	AllocatedTime  string `json:"allocatedTime"`  // 资料更新时间
-	AllocatedType  int    `json:"allocatedType"`  // 类型
-	CustomerSource string `json:"customerSource"` // 客户来源
-	DurationType   int    `json:"durationType"`   // 从事 Dropshipping 时长类型
-	Level          string `json:"level"`          // 等级
-	OrderLevel     string `json:"orderLevel"`     // 订单等级
-	OrderNum       int    `json:"orderNum"`       // 最近30天订单数量
-	StoreNum       int    `json:"storeNum"`       // 店铺数量
-	WeeklyAdBudget int    `json:"weeklyAdBudget"` // 周广告预算
-	OrderVolume    int    `json:"orderVolume"`    // 每个月订单量
-}
-
+// CustomerInfo 客户档案
 type CustomerInfo struct {
-	ID              int     `json:"id"`
-	RefID           int     `json:"refId"`          // 关联ID
-	Cid             int     `json:"cid"`            // 租户ID
-	Username        string  `json:"username"`       // 用户名
-	ManagerID       int     `json:"managerId"`      // 客户经理ID
-	ManagerName     string  `json:"managerName"`    // 客户经理用户名
-	ManagerAssTime  string  `json:"managerAssTime"` // 客户经理分配时间
-	PlatformType    int     `json:"platformType"`   // 平台类型：1-facebook
-	ThirdID         string  `json:"thirdId"`        // 第三方平台ID
-	Password        string  `json:"password"`       // 密码
-	Gender          int     `json:"gender"`         // 1-Ms., 2-Mr.
-	FirstName       string  `json:"firstName"`
-	LastName        string  `json:"lastName"`
-	Email           string  `json:"email"` // 联系邮箱
-	Describes       int     `json:"describes"`
-	Nickname        string  `json:"nickname"` // 昵称
-	Company         string  `json:"company"`
-	RecommenderID   int     `json:"recommenderId"`
-	HeaderPortrait  string  `json:"headerPortrait"` // 头像
-	LastLoginTime   string  `json:"lastLoginTime"`  // 最近登录时间
-	LastLoginHost   string  `json:"lastLoginHost"`  // 最近登录ip
-	LastLoginType   int     `json:"lastLoginType"`  // 最近登录类型：0.前台 1.后台
-	RegHost         string  `json:"regHost"`        // 注册ip
-	RecognitionCode string  `json:"recognitionCode"`
-	RegRegion       string  `json:"regRegion"`    // 注册区域
-	RegCountryID    int     `json:"regCountryId"` // 注册国家ID
-	RegTime         string  `json:"regTime"`      // 注册时间
-	RegSource       int     `json:"regSource"`    // 注册来源: 0-hypersku, 1-facebook
-	TotalOrder      int64   `json:"totalOrder"`   // 总订单数
-	TotalAmount     float64 `json:"totalAmount"`  // 总购买金额
-	Status          int     `json:"status"`       // 状态：1：正常, 2:停用
-	ReplyToEmail    string  `json:"replyToEmail"` // 回复邮箱地址
-	TimeZoneID      int     `json:"timeZoneId"`   // 时区设置（默认是0）
+	// ===== 身份标识 =====
+	CustomerID int `json:"customerId"` // 客户ID（平台唯一标识，卡片 Header 由宿主渲染，AI 链路仅传 ID）
+
+	// ===== 消费状态与转化阶段 =====
+	HasOrder bool   `json:"hasOrder"` // 是否有已支付订单（true = 已出池，拒绝触发）
+	Stores   string `json:"stores"`   // 绑定店铺集合（建议裁剪为「绑定状态 + 店铺数」形态；非空 = 已绑店）
+
+	// ===== 问卷五项（完整度第 1 层 ~60% 权重 + 基础画像展示 + AI 输入）=====
+	EngagedTime     int    `json:"engagedTime"`     // DS 经验：1 还没开始 / 2 少于6个月 / 3 6个月-1年 / 4 多于1年
+	WeeklyAdBudget  int    `json:"weeklyAdBudget"`  // 周广告预算：1 <200USD / 2 200-500USD / 3 500-1000USD / 4 >1000USD / 5 200-1000USD
+	OrderVolume     int    `json:"orderVolume"`     // 月订单量预期：0 刚刚开始 / 1 1-100 / 2 100-500 / 3 500+
+	Niche           int    `json:"niche"`           // 细分市场（1-10 枚举）
+	ServiceInterest string `json:"serviceInterest"` // 意向服务（多选逗号串：1 dropshipping / 2 DTC / 3 POD / 4 Merch / 5 Wholesale）
+
+	// ===== 脱敏布尔信号（下游按原始字段计算回传，替代 PII 原值）=====
+	HasContactWay bool `json:"hasContactWay"` // 是否有可用联系方式（chat_account 或 reply_to_email 非空）
+	HasFirstName  bool `json:"hasFirstName"`  // 是否填写了名（first_name 非空）
+
+	// ===== 基础档案（保留非 PII 业务属性）=====
+	Company     string `json:"company"`     // 公司（业务属性）
+	CountryName string `json:"countryName"` // 国家
+	RegRegion   string `json:"regRegion"`   // 注册区域
+
+	// ===== 时间特征 =====
+	SignedUpAt    string `json:"signedUpAt"`    // 注册时间（刚注册 + 问卷全空 → 冷启动声明）
+	LastLoginTime string `json:"lastLoginTime"` // 最近登录（两表冗余，取数口径归数据属主）
+
+	// ===== 渠道归因（卡片 Header Meta + AI 输入特征）=====
+	PartnerSource    string `json:"partnerSource"`    // 合作来源代码
+	ChannelSource    string `json:"channelSource"`    // 渠道来源
+	ChannelSourceSub string `json:"channelSourceSub"` // 渠道来源二级
+	ChannelMedium    string `json:"channelMedium"`    // 渠道 Medium
+	ChannelCampaign  string `json:"channelCampaign"`  // 渠道 Campaign
+	ChannelURL       string `json:"channelUrl"`       // 渠道来源链接
+
+	// ===== 业务标签 =====
+	Tag        int    `json:"tag"`        // 客户标签：0 默认 / 1 老用户 / 2 新用户 / 3 潜在用户 / 4 流失用户
+	Level      string `json:"level"`      // 用户等级（L0 等）
+	OrderLevel string `json:"orderLevel"` // 订单量级别（O0）
 }
 
-// GetCustomerExtendInfo 获取客户扩展信息
-func (api *CustomerInfoApi) GetCustomerExtendInfo(customerId string) (*CustomerExtendInfo, error) {
-	result := &ApiResponse[CustomerExtendInfo]{}
-	if err := api.http.Get("/api/customer/manager/customer/other/info/"+customerId, result); err != nil {
+// GetCustomerInfo 获取客户档案
+func (api *CustomerInfoApi) GetCustomerInfo(customerId string) (*CustomerInfo, error) {
+	result := &ApiResponse[CustomerInfo]{}
+	if err := api.http.Get("/api/customer/outer/mcp/customer/profile/detail/"+customerId, result); err != nil {
 		return nil, err
 	}
 
 	return &result.Data, nil
-}
-
-// GetCustomerInfo 获取客户信息
-func (api *CustomerInfoApi) GetCustomerInfo(customerId string) (*CustomerInfo, error) {
-
-	result := &CustomerInfo{}
-	if err := api.http.Get("/api/customer/api/customer/info/"+customerId, result); err != nil {
-		return nil, err
-	}
-
-	return result, nil
-
 }

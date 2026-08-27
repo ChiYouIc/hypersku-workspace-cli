@@ -28,4 +28,4 @@ hypersku-cli customer detail <customerId>
 ## 注意事项
 
 1. 注册区域可能为空字符串。
-2. 该命令展示客户基础档案；如需等级、周广告预算等运营信息，请使用 `hypersku-cli customer extends`。
+2. 该命令展示客户脱敏档案（问卷信息、基础档案、渠道归因、业务标签等）。
