@@ -19,7 +19,5 @@
     "linux": "$HOME/.hypersku-cli/bin/hypersku-cli auth status",
     "win32": "%USERPROFILE%\\.hypersku-cli\\bin\\hypersku-cli.exe auth status"
   },
-  "statusMatch": "^Logged in as .+",
-  "authUrlDomain": "auth.hypersku.com",
-  "authDeviceFlow": true
+  "statusMatch": "^Logged in as .+"
 }

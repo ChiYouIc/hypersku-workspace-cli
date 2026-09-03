@@ -106,7 +106,7 @@ build\hypersku-cli.exe purchase info 123456
 |------|------|--------|------|
 | `api_base_url` | string | `""` | API 基础地址，为空时不覆盖默认地址 |
 | `api_timeout` | int | `30` | API 请求超时时间（秒），小于等于 0 时使用默认值 |
-| `api_token` | string | `""` | API 认证令牌，自动作为 `authorization` 请求头发送 |
+| `api_token` | string | `""` | API 认证令牌，自动作为 `authorization` 请求头发送；`auth status` 亦基于此 token 远程校验登录态 |
 
 > 配置文件不存在时自动使用默认配置；启动时会自动创建 `~/.hypersku-cli` 目录（含 `logs/`、`data/` 子目录）。
 

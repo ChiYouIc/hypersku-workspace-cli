@@ -21,7 +21,7 @@ tags:
 
 | 能力域 | 用途 | 命令入口 | 承载技能包 |
 |--------|------|----------|------------|
-| 登录认证 | 设备授权登录、状态校验、退出登录（所有查询的前置条件） | `hypersku-cli auth login/status/logout` | `hypersku-auth` |
+| 登录认证 | 登录状态远程校验（login/logout 暂未实现，凭证手动配置于 ~/.hypersku-cli/config.json） | `hypersku-cli auth login/status/logout` | `hypersku-auth` |
 | 采购订单 | 订单详情、商品明细、订单搜索、采购日志、国际物流 | `hypersku-cli purchase ...` | `hypersku-purchase` |
 | 客户管理 | 客户档案、客户订单、收货地址、退件工单、订单/交易统计 | `hypersku-cli customer ...` | `hypersku-customer` |
 | 客户画像分析 | 新用户线索评估、跟进优先级、转化策略、销售话术 | 基于 `customer detail` 数据分析 | `hypersku-customer-profile-analysis` |
@@ -34,7 +34,7 @@ tags:
 
 ## 统一使用规则
 
-1. **登录前置**：所有业务查询都要求已登录。查询报凭证错误时，先用 `auth status` 校验；未登录则走 `auth login` 设备授权流程（参见 `hypersku-auth` 技能包）。
+1. **登录前置**：所有业务查询都要求 token 有效（凭证保存于 `~/.hypersku-cli/config.json` 的 `api_token`，当前需手动配置）。查询报凭证错误时，先用 `auth status` 远程校验；未登录则引导用户更新配置文件中的 `api_token`（参见 `hypersku-auth` 技能包）。
 2. **参数必填**：各命令的必填参数（如 orderId、trackingNumber、customerId）缺失时会显示帮助信息，需提示用户补全后再执行。
 3. **查不到即止**：某个接口查不到数据时，不要换接口反复尝试，直接告知用户无结果。
 4. **一次一问**：每次只执行一条命令，等结果返回后再决定下一步，不要连续并行调用多个查询。

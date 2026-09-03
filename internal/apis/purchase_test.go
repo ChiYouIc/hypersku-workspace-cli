@@ -2,24 +2,8 @@ package apis
 
 import (
 	"encoding/json"
-	"os"
 	"testing"
-
-	"github.com/hypersku/hypersku-cli/internal/httpclient"
 )
-
-func TestMain(m *testing.M) {
-	// 初始化 HTTP 客户端（测试环境下没有配置文件，使用默认配置）
-	httpclient.Reset()
-	httpclient.Init(
-		httpclient.WithBaseURL("https://pur.hyperoms.com"),
-		httpclient.WithHeader("authorization", "eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJvd2VuLmNoaUBldGFpbGVyaHViLmNvbSIsInVzZXJJZCI6IjE4MCIsIm5hbWUiOiLmsaDlj4siLCJjaWQiOiIxMDAiLCJ0eXBlIjoiMSIsImV4cCI6MTc4ODI1NDg3MX0.jzOOntZZCiUFAlSwyZdBlbUqRYbzDUzJlL3bBcf6DpwBmTu_w370DhEyv7gt88uaVt8Fb7COgTVs90UsbBKO4fl60AWh5A_gNVSe5v2WOyFRXfAXDMH2Rt83FTnuSO-jTQEOXhk3pFDlRScVVUnCKz66eh-CgTb0SiGFeAHCYmM"),
-	)
-
-	code := m.Run()
-
-	os.Exit(code)
-}
 
 func TestPageList(t *testing.T) {
 	purchase := NewPurchaseApi()

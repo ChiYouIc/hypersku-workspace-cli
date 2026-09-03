@@ -44,13 +44,16 @@ var rootCmd = &cobra.Command{
 // Execute 将所有子命令添加到根命令并设置 flags。
 // 由 main.main() 调用，只需执行一次。
 func Execute() {
+	// 状态类命令通过退出码表达结果，错误信息由 Execute 统一控制，避免 cobra 重复打印
+	rootCmd.SilenceUsage = true
+	rootCmd.SilenceErrors = true
 	if err := rootCmd.Execute(); err != nil {
 		// exitCodeError：已向用户输出过结果，仅以指定退出码结束（如 auth status 未登录）
 		var ece *exitCodeError
 		if errors.As(err, &ece) && ece.msg == "" {
 			os.Exit(ece.code)
 		}
-		fmt.Println(err)
+		fmt.Fprintln(os.Stderr, "Error:", err)
 		os.Exit(1)
 	}
 }

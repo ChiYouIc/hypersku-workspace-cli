@@ -12,8 +12,9 @@ type PageData[T any] struct {
 }
 
 type ApiResponse[T any] struct {
-	Code   int  `json:"code"`
-	Rel    bool `json:"rel"`
-	Status int  `json:"status"`
-	Data   T    `json:"data"`
+	Code    int    `json:"code"`
+	Rel     bool   `json:"rel"`
+	Status  int    `json:"status"`
+	Message string `json:"message"`
+	Data    T      `json:"data"`
 }
