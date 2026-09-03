@@ -10,7 +10,7 @@ GO          := go
 GOFLAGS     := -ldflags "$(LDFLAGS)"
 OUTPUT_DIR  := build
 
-.PHONY: all build build-linux build-macos clean test lint run tidy pack help
+.PHONY: all build build-linux build-macos clean test lint run tidy dist pack help
 
 all: clean build
 
@@ -41,6 +41,9 @@ run: ## 直接运行
 
 pack: ## 打包二进制与 skills 到用户目录（~\.hypersku-cli + ~\.agents\skills\ehub）
 	@powershell -ExecutionPolicy Bypass -File scripts/pack.ps1
+
+dist: ## workbuddy 平台打包（workbuddy-skill 独立技能包 / workbuddy-connector 连接器包）
+	@powershell -ExecutionPolicy Bypass -File scripts/pack-workbuddy.ps1 $(DIST_TARGET)
 
 tidy: ## 整理依赖
 	$(GO) mod tidy

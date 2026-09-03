@@ -7,11 +7,18 @@ import (
 	"path/filepath"
 )
 
+// AuthConfig 表示配置文件中的认证节（覆盖内置默认端点）。
+type AuthConfig struct {
+	BaseURL  string `json:"base_url,omitempty"`  // 认证服务基地址，如 https://auth.hypersku.com
+	ClientID string `json:"client_id,omitempty"` // OAuth client_id
+}
+
 // Config 表示 HyperSKU CLI 的配置文件结构
 type Config struct {
-	APIBaseURL string `json:"api_base_url,omitempty"`
-	APITimeout int    `json:"api_timeout,omitempty"`
-	APIToken   string `json:"api_token,omitempty"`
+	APIBaseURL string      `json:"api_base_url,omitempty"`
+	APITimeout int         `json:"api_timeout,omitempty"`
+	APIToken   string      `json:"api_token,omitempty"`
+	Auth       *AuthConfig `json:"auth,omitempty"`
 }
 
 // DefaultConfigDir 返回默认的配置目录: ~/.hypersku-cli

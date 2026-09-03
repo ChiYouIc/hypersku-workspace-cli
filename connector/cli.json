@@ -1,0 +1,25 @@
+{
+  "init": {
+    "darwin": "mkdir -p \"$HOME/.hypersku-cli/bin\" && curl -fsSL \"https://dist.hypersku.com/cli/latest/hypersku-cli-darwin-amd64\" -o \"$HOME/.hypersku-cli/bin/hypersku-cli\" && chmod +x \"$HOME/.hypersku-cli/bin/hypersku-cli\" && (grep -q \"hypersku-cli/bin\" ~/.zshrc 2>/dev/null || echo 'export PATH=\"$HOME/.hypersku-cli/bin:$PATH\"' >> ~/.zshrc)",
+    "linux": "mkdir -p \"$HOME/.hypersku-cli/bin\" && curl -fsSL \"https://dist.hypersku.com/cli/latest/hypersku-cli-linux-amd64\" -o \"$HOME/.hypersku-cli/bin/hypersku-cli\" && chmod +x \"$HOME/.hypersku-cli/bin/hypersku-cli\" && (grep -q \"hypersku-cli/bin\" ~/.bashrc 2>/dev/null || echo 'export PATH=\"$HOME/.hypersku-cli/bin:$PATH\"' >> ~/.bashrc)",
+    "win32": "if not exist \"%USERPROFILE%\\.hypersku-cli\\bin\" mkdir \"%USERPROFILE%\\.hypersku-cli\\bin\" && curl -fsSL \"https://dist.hypersku.com/cli/latest/hypersku-cli-win32-amd64.exe\" -o \"%USERPROFILE%\\.hypersku-cli\\bin\\hypersku-cli.exe\""
+  },
+  "auth": {
+    "darwin": "$HOME/.hypersku-cli/bin/hypersku-cli auth login",
+    "linux": "$HOME/.hypersku-cli/bin/hypersku-cli auth login",
+    "win32": "%USERPROFILE%\\.hypersku-cli\\bin\\hypersku-cli.exe auth login"
+  },
+  "unAuth": {
+    "darwin": "$HOME/.hypersku-cli/bin/hypersku-cli auth logout",
+    "linux": "$HOME/.hypersku-cli/bin/hypersku-cli auth logout",
+    "win32": "%USERPROFILE%\\.hypersku-cli\\bin\\hypersku-cli.exe auth logout"
+  },
+  "status": {
+    "darwin": "$HOME/.hypersku-cli/bin/hypersku-cli auth status",
+    "linux": "$HOME/.hypersku-cli/bin/hypersku-cli auth status",
+    "win32": "%USERPROFILE%\\.hypersku-cli\\bin\\hypersku-cli.exe auth status"
+  },
+  "statusMatch": "^Logged in as .+",
+  "authUrlDomain": "auth.hypersku.com",
+  "authDeviceFlow": true
+}

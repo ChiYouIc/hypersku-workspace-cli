@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"time"
@@ -14,6 +15,9 @@ import (
 var (
 	cfgFile     string
 	showVersion bool
+
+	// loadedConfig 保存 PersistentPreRun 中加载的配置，供子命令（如 auth）读取
+	loadedConfig *config.Config
 )
 
 // rootCmd 表示根命令，当不调用任何子命令时执行
@@ -41,6 +45,11 @@ var rootCmd = &cobra.Command{
 // 由 main.main() 调用，只需执行一次。
 func Execute() {
 	if err := rootCmd.Execute(); err != nil {
+		// exitCodeError：已向用户输出过结果，仅以指定退出码结束（如 auth status 未登录）
+		var ece *exitCodeError
+		if errors.As(err, &ece) && ece.msg == "" {
+			os.Exit(ece.code)
+		}
 		fmt.Println(err)
 		os.Exit(1)
 	}
@@ -61,7 +70,9 @@ func initGlobalDependencies() {
 	cfg, err := config.Load(configPath)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "警告: 加载配置文件失败: %v\n", err)
+		cfg = &config.Config{}
 	}
+	loadedConfig = cfg
 
 	// 3. 构建 HTTP 客户端选项
 	opts := []httpclient.Option{

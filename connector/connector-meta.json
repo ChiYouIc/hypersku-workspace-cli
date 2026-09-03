@@ -1,0 +1,24 @@
+{
+  "name": "HyperSKU",
+  "name_en": "HyperSKU",
+  "name_zh": "HyperSKU 电商运营助手",
+  "description": "HyperSKU CLI connector: query purchase orders, customer orders, customer profiles, logistics tracking, warehouse and after-sales data via a single command line tool.",
+  "description_zh": "HyperSKU CLI 连接器：通过统一命令行查询采购订单、客户订单、客户档案、物流轨迹、仓库与售后数据。",
+  "description_en": "HyperSKU CLI connector: query purchase orders, customer orders, customer profiles, logistics tracking, warehouse and after-sales data via a single command line tool.",
+  "source": "hypersku-cli",
+  "type": "cli",
+  "version": "0.1.0",
+  "minWorkbuddyVersion": "5.0.0",
+  "examples_zh": [
+    "查一下采购订单 1153391630170980352 的详情",
+    "客户 sales@example.com 绑定店铺了吗？联系方式是什么？",
+    "查物流单号 SF1234567890 的轨迹",
+    "这个客户最近的订单量和交易流水怎么样"
+  ],
+  "examples_en": [
+    "Show me the details of purchase order 1153391630170980352",
+    "Has customer sales@example.com bound a store? What is the contact info?",
+    "Track logistics number SF1234567890",
+    "How are this customer's recent order volume and transaction flow"
+  ]
+}
