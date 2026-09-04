@@ -10,7 +10,8 @@
       workbuddy-skill      每个能力域一个独立 skill zip → build\dist\workbuddy-skill\
                            （zip 根 = SKILL.md + references/，符合 workbuddy 两级结构规范）
       workbuddy-connector  完整连接器 zip（connector-meta.json + cli.json + icon.svg +
-                           skills/ 全部子目录 + 三平台二进制）→ build\dist\workbuddy-connector\
+                           skills/ 全部子目录，不含二进制；线上分发走 cli.json 的
+                           init 下载）→ build\dist\workbuddy-connector\
       all                  依次执行以上全部目标（默认）
 
     本地开发安装请使用 scripts/pack.ps1（make pack），不属于 workbuddy 发布物，故不在此脚本内。
@@ -21,10 +22,7 @@
     打包目标：workbuddy-skill | workbuddy-connector | all（默认 all）
 
 .PARAMETER Version
-    版本号（写入二进制与连接器元数据；默认取 Makefile 同步值 0.1.0）
-
-.PARAMETER SkipBinary
-    连接器包不附带平台二进制（纯 skills + 元数据预览场景）
+    版本号（写入连接器元数据；默认取 Makefile 同步值 0.1.0）
 
 .EXAMPLE
     powershell -ExecutionPolicy Bypass -File scripts\pack-workbuddy.ps1 -Target workbuddy-skill
@@ -39,8 +37,7 @@
 param(
     [ValidateSet('workbuddy-skill', 'workbuddy-connector', 'all')]
     [string]$Target = 'all',
-    [string]$Version = '0.1.0',
-    [switch]$SkipBinary
+    [string]$Version = '0.1.0'
 )
 
 $ErrorActionPreference = 'Stop'
@@ -53,21 +50,9 @@ $ProjectRoot = Split-Path -Parent $PSScriptRoot
 Set-Location $ProjectRoot
 
 # ========== 公共配置 ==========
-$AppName         = 'hypersku-cli'
 $SkillsSource    = Join-Path $ProjectRoot 'skills'
 $ConnectorSource = Join-Path $ProjectRoot 'connector'
 $DistRoot        = Join-Path $ProjectRoot 'build\dist'
-
-# 读取 git 提交哈希（非 git 环境时回退为 unknown）
-$Commit = 'unknown'
-if (Get-Command git -ErrorAction SilentlyContinue) {
-    $Commit = & git rev-parse --short HEAD 2>$null
-    if (-not $Commit) { $Commit = 'unknown' }
-}
-$Date = (Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ')
-$LdFlags = "-X github.com/hypersku/hypersku-cli/internal/version.Version=$Version" +
-           " -X github.com/hypersku/hypersku-cli/internal/version.Commit=$Commit" +
-           " -X github.com/hypersku/hypersku-cli/internal/version.Date=$Date"
 
 # ========== 工具函数 ==========
 
@@ -76,26 +61,6 @@ function Get-SkillDirs {
     Get-ChildItem -Path $SkillsSource -Directory | Where-Object {
         Test-Path (Join-Path $_.FullName 'SKILL.md')
     }
-}
-
-function Build-Binaries {
-    # 编译三平台二进制到 build\bin\
-    param([string]$OutDir)
-
-    $platforms = @(
-        @{ GOOS = 'windows'; GOARCH = 'amd64'; Name = "$AppName-win32-amd64.exe" },
-        @{ GOOS = 'linux';   GOARCH = 'amd64'; Name = "$AppName-linux-amd64" },
-        @{ GOOS = 'darwin';  GOARCH = 'amd64'; Name = "$AppName-darwin-amd64" }
-    )
-    New-Item -ItemType Directory -Force -Path $OutDir | Out-Null
-    foreach ($p in $platforms) {
-        Write-Host ("  编译 " + $p.Name + " ...") -ForegroundColor Yellow
-        $env:GOOS = $p.GOOS
-        $env:GOARCH = $p.GOARCH
-        & go build "-ldflags=$LdFlags" -o (Join-Path $OutDir $p.Name) .
-        if ($LASTEXITCODE -ne 0) { throw ("go build " + $p.Name + " 失败") }
-    }
-    Remove-Item Env:GOOS, Env:GOARCH -ErrorAction SilentlyContinue
 }
 
 function Reset-Dir {
@@ -131,7 +96,7 @@ function Build-WorkbuddyConnector {
     Reset-Dir $outDir
 
     Write-Host ''
-    Write-Host '>>> [workbuddy-connector] 打包完整连接器（元数据 + skills + 可选二进制）' -ForegroundColor Cyan
+    Write-Host '>>> [workbuddy-connector] 打包完整连接器（元数据 + skills，不含二进制）' -ForegroundColor Cyan
 
     # 校验连接器必备文件
     foreach ($f in @('connector-meta.json', 'cli.json', 'icon.svg')) {
@@ -158,16 +123,7 @@ function Build-WorkbuddyConnector {
     $meta.version = $Version
     [IO.File]::WriteAllText($metaPath, ($meta | ConvertTo-Json -Depth 10), (New-Object Text.UTF8Encoding $false))
 
-    # 可选：附带三平台二进制（离线分发场景；线上分发走 init 下载，见 cli.json）
-    if (-not $SkipBinary) {
-        $binDir = Join-Path $ProjectRoot 'build\bin'
-        Build-Binaries -OutDir $binDir
-        $stageBin = Join-Path $stage 'bin'
-        New-Item -ItemType Directory -Force -Path $stageBin | Out-Null
-        Get-ChildItem -Path $binDir -File | ForEach-Object {
-            Copy-Item -Path $_.FullName -Destination (Join-Path $stageBin $_.Name) -Force
-        }
-    }
+    # 注意：不打包平台二进制，线上分发走 cli.json 的 init 下载
 
     $zipPath = Join-Path $outDir 'hypersku-cli-connector.zip'
     Compress-Archive -Path (Join-Path $stage '*') -DestinationPath $zipPath -CompressionLevel Optimal -Force

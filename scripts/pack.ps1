@@ -33,7 +33,7 @@ if (Get-Command git -ErrorAction SilentlyContinue) {
 $Date = (Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ')
 
 # 目标目录
-$BinDir = Join-Path $HOME '.hypersku-cli'
+$BinDir = Join-Path $HOME '.hypersku-cli/bin'
 
 Write-Host ''
 Write-Host '==============================' -ForegroundColor Cyan
