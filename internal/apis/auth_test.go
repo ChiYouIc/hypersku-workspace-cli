@@ -2,6 +2,7 @@ package apis
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"testing"
 
@@ -37,5 +38,39 @@ func TestGetUserInfoEmptyToken(t *testing.T) {
 	auth := NewAuthApi()
 	if _, err := auth.GetUserInfo(""); err == nil {
 		t.Error("空 token 应返回错误")
+	}
+}
+
+func TestAuth_Login(t *testing.T) {
+	tests := []struct {
+		name string // description of this test case
+		// Named input parameters for target function.
+		username string
+		password string
+		wantErr  bool
+	}{
+		{name: "Correct", username: "owen.chi@etailerhub.com", password: "owen@1234", wantErr: false},
+		{name: "Fail", username: "owen.chi@etailerhub.com", password: "owen@12345", wantErr: true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			a := NewAuthApi()
+			got, gotErr := a.Login(tt.username, tt.password)
+			if gotErr != nil {
+				if !tt.wantErr {
+					t.Errorf("Login() failed: %v", gotErr)
+				}
+				return
+			}
+			if tt.wantErr {
+				t.Fatal("Login() succeeded unexpectedly")
+			}
+
+			if got == "" {
+				t.Errorf("token 获取失败")
+			}
+
+			fmt.Println(got)
+		})
 	}
 }

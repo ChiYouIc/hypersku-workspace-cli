@@ -13,12 +13,25 @@ type AuthConfig struct {
 	ClientID string `json:"client_id,omitempty"` // OAuth client_id
 }
 
+// DefaultAPIBaseURL 默认 API 基础地址（配置文件缺失或未配置 api_base_url 时使用）
+const DefaultAPIBaseURL = "https://pur.hyperoms.com"
+
+// Default 返回默认配置：默认超时 30 秒，api_base_url 默认 DefaultAPIBaseURL
+func Default() *Config {
+	return &Config{
+		APIBaseURL: DefaultAPIBaseURL,
+		APITimeout: 30,
+	}
+}
+
 // Config 表示 HyperSKU CLI 的配置文件结构
 type Config struct {
-	APIBaseURL string      `json:"api_base_url,omitempty"`
-	APITimeout int         `json:"api_timeout,omitempty"`
-	APIToken   string      `json:"api_token,omitempty"`
-	Auth       *AuthConfig `json:"auth,omitempty"`
+	APIBaseURL string `json:"api_base_url,omitempty"`
+	APITimeout int    `json:"api_timeout,omitempty"`
+	APIToken   string `json:"api_token,omitempty"`
+	// APITokenUpdatedAt 记录 api_token 最近一次更新时间（RFC3339 格式，登录成功时写入，登出时清除）
+	APITokenUpdatedAt string      `json:"api_token_updated_at,omitempty"`
+	Auth              *AuthConfig `json:"auth,omitempty"`
 }
 
 // DefaultConfigDir 返回默认的配置目录: ~/.hypersku-cli
@@ -51,11 +64,10 @@ func EnsureConfigDir() (string, error) {
 	return dir, nil
 }
 
-// Load 从指定路径加载配置文件，如果文件不存在则返回默认配置
+// Load 从指定路径加载配置文件，如果文件不存在则返回默认配置。
+// 文件中未配置 api_base_url 时回填默认值，保证 HTTP 客户端始终有基础地址。
 func Load(path string) (*Config, error) {
-	cfg := &Config{
-		APITimeout: 30, // 默认超时 30 秒
-	}
+	cfg := Default()
 
 	data, err := os.ReadFile(path)
 	if err != nil {
@@ -73,6 +85,11 @@ func Load(path string) (*Config, error) {
 	// 设置默认超时
 	if cfg.APITimeout <= 0 {
 		cfg.APITimeout = 30
+	}
+
+	// api_base_url 未配置时回填默认值
+	if cfg.APIBaseURL == "" {
+		cfg.APIBaseURL = DefaultAPIBaseURL
 	}
 
 	return cfg, nil

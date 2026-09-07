@@ -6,34 +6,35 @@
 hypersku-cli auth logout
 ```
 
-## 当前状态：暂未实现
+## 登出流程
 
-`auth logout` 为空操作：不清理任何凭证，打印提示信息后正常返回（退出码 0）。
+1. 读取本地配置，将 `api_token` 与 `api_token_updated_at` 置空并写回（保留 `api_base_url` 等其他配置）。
+2. 本地凭证清除后即视为未登录，无需调用服务端接口。
 
 ## 输出示例
 
+成功登出（退出码 0，stdout）：
+
 ```text
-logout 暂未实现，请手动删除 ~/.hypersku-cli/config.json 中的 api_token
+Logged out
 ```
 
-## 手动退出登录
+本来就没有 token（退出码 0，stdout）：
 
-编辑 `~/.hypersku-cli/config.json`，将 `api_token` 置空或删除该字段：
-
-```json
-{
-  "api_base_url": "https://pur.hyperoms.com",
-  "api_token": ""
-}
+```text
+Already logged out
 ```
 
 ## 退出码
 
 | 场景 | 退出码 |
 |------|--------|
-| 成功（空操作） | 0 |
+| 登出成功 | 0 |
+| 本地无 token（幂等） | 0 |
+| 配置写入失败 | 1 |
 
 ## 注意事项
 
-- **幂等**：可反复执行，无任何副作用。
-- **后续影响**：手动清除 `api_token` 后，所有业务查询命令（purchase/customer/logistics 等）与 `auth status` 均会判定为未登录。
+- **幂等**：本地无 token 时重复执行输出 `Already logged out`，正常返回退出码 0。
+- **只清 token**：`api_base_url` 等其他配置保留，重新登录时无需重新配置基础地址；`api_token_updated_at` 随 token 一并清除。
+- **后续影响**：登出后所有业务查询命令（purchase/customer/logistics 等）与 `auth status` 均判定为未登录；需要时重新执行 `hypersku-cli auth login`。

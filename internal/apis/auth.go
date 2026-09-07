@@ -1,6 +1,7 @@
 package apis
 
 import (
+	"errors"
 	"fmt"
 	"net/url"
 
@@ -28,6 +29,26 @@ type UserInfo struct {
 	RoleCode string `json:"roleCode"`
 	Roles    string `json:"roles"`
 	Username string `json:"username"`
+}
+
+// Login 用户登录，成功返回 access token。
+func (a *Auth) Login(username, password string) (string, error) {
+	path := "/api/auth/jwt/token"
+
+	body := map[string]string{
+		"username": username,
+		"password": password,
+	}
+	result := &ApiResponse[string]{}
+	if err := a.http.Post(path, body, result); err != nil {
+		return "", err
+	}
+
+	if result.Status != 200 {
+		return "", errors.New("login fail, username or password is error")
+	}
+
+	return result.Data, nil
 }
 
 // GetUserInfo 携带 token 请求服务端校验，并返回当前用户信息。

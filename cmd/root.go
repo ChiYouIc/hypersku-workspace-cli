@@ -73,11 +73,18 @@ func initGlobalDependencies() {
 	cfg, err := config.Load(configPath)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "警告: 加载配置文件失败: %v\n", err)
-		cfg = &config.Config{}
+		cfg = config.Default()
 	}
 	loadedConfig = cfg
 
-	// 3. 构建 HTTP 客户端选项
+	// 3. 首次运行（配置文件不存在）时创建初始配置文件，写入默认 api_base_url
+	if _, err := os.Stat(configPath); os.IsNotExist(err) {
+		if err := config.Save(configPath, cfg); err != nil {
+			fmt.Fprintf(os.Stderr, "警告: 创建配置文件失败: %v\n", err)
+		}
+	}
+
+	// 4. 构建 HTTP 客户端选项
 	opts := []httpclient.Option{
 		httpclient.WithTimeout(time.Duration(cfg.APITimeout) * time.Second),
 		httpclient.WithHeader("User-Agent", "HyperSKU-CLI/0.1.0"),
@@ -91,7 +98,7 @@ func initGlobalDependencies() {
 		opts = append(opts, httpclient.WithHeader("authorization", cfg.APIToken))
 	}
 
-	// 4. 确保配置目录存在（后续日志、数据等使用）
+	// 5. 确保配置目录存在（后续日志、数据等使用）
 	if _, err := config.EnsureConfigDir(); err != nil {
 		fmt.Fprintf(os.Stderr, "警告: 创建配置目录失败: %v\n", err)
 	}
