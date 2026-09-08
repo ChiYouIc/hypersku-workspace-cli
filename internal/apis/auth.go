@@ -60,6 +60,7 @@ func (a *Auth) GetUserInfo(token string) (*UserInfo, error) {
 
 	result := &UserInfo{}
 	path := "/api/admin/user/front/info?token=" + url.QueryEscape(token)
+	a.http.SetHeader("authorization", token)
 	if err := a.http.Get(path, result); err != nil {
 		return nil, err
 	}
