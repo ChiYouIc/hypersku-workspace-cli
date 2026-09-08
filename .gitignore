@@ -25,3 +25,7 @@
 # 临时文件
 tmp/
 temp/
+
+# Python 缓存
+__pycache__/
+*.pyc

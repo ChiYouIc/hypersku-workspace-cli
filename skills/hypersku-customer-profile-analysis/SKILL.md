@@ -4,8 +4,8 @@ display_name: 客户画像分析
 display_name_en: Customer Profile Analysis
 description_zh: 对已注册且无已支付订单的客户生成转化画像：leadQuality 线索质量、intentHeat 意向热度、followPriority 跟进优先级三项综合评分，附线索速读、按转化阶段分流的转化策略与销售话术。
 description_en: Generate conversion profiles for registered customers with no paid orders: three scores (leadQuality, intentHeat, followPriority) plus a reading summary, stage-specific conversion strategies, and sales scripts.
-description: HyperSKU 客户画像分析。当用户需要对"已注册且无已支付订单"的客户生成画像、线索评估、跟进优先级、转化策略、销售话术（促绑店/促首单）时使用，基于 hypersku-cli customer detail 的脱敏档案字段做评分与策略输出。
-version: 2.0.0
+description: HyperSKU 客户画像分析。当用户需要对"已注册且无已支付订单"的客户生成画像、线索评估、跟进优先级、转化策略、销售话术（促绑店/促首单）时使用，基于 hypersku-cli customer detail 的脱敏档案字段做评分与策略输出；跟进优先级由本包 scripts/follow_priority.py 查表计算；要求网页形态时只产槽位 JSON 并调用本包 scripts/render_profile.py 装配固定版式 HTML。
+version: 2.2.0
 author: owen
 tags:
   - hypersku
@@ -17,7 +17,7 @@ tags:
 
 对**已注册且无已支付订单**的客户生成转化画像：三项综合评分 + 线索速读 + 转化策略 + 可用话术，帮助销售决定"跟不跟、什么时候跟、说什么"。
 
-**本 skill 只约束评估规则与输出内容，不约束输出形态**——调用方可要求组织为网页、markdown 或系统触发的结构化 JSON；未指定形态时按易读的结构化文本输出。
+**本 skill 约束评估规则与输出内容**——调用方可要求组织为网页、markdown 或系统触发的结构化 JSON；未指定形态时按易读的结构化文本输出。**网页形态必须走渲染管线**（见下文），禁止 AI 直接手写 HTML。
 
 ## 分析对象与前置校验（硬规则）
 
@@ -85,9 +85,16 @@ tags:
 
 ### followPriority（跟进优先级：P0 / P1 / P2 / P3）
 
-由上两项交叉得出，语义为销售行动节奏：
+**不由 AI 判断，由脚本查表得出**（口径与平台侧 FollowPriorityCalculator 完全一致）。在 leadQuality / intentHeat 定档后，调用本包脚本：
 
-| leadQuality \ intentHeat | 热 | 温 | 冷 |
+```
+python scripts/follow_priority.py --lead-quality <高|中|低> --intent-heat <热|温|冷>
+# 输出：P0-P3（加 --json 可得完整三元组）
+```
+
+交叉表如下，仅作展示与人工核对，不得跳过脚本自行查表填值：
+
+| leadQuality \\ intentHeat | 热 | 温 | 冷 |
 |--------------------------|-----|-----|-----|
 | 高 | **P0** 立即跟进（当日） | **P1** 本周跟进 | **P2** 常规池 |
 | 中 | **P1** 本周跟进 | **P2** 常规池 | **P3** 低频维护 |
@@ -105,15 +112,37 @@ tags:
 - **未绑店 → 促绑店**：策略与话术围绕绑定店铺的价值（选品、订单、物流一体化管理），不涉及下单细节。
 - **已绑店未首单 → 促首单**：策略与话术围绕降低首单门槛（选品建议、首单流程引导、小额试单），默认以绑店动作为信任基础。
 
+## 网页形态输出管线（硬规则）
+
+要求输出网页/HTML 时，AI **只产槽位 JSON，不碰模板**：
+
+```
+hypersku-cli customer detail <customerId>   → 脱敏信号
+        ↓
+AI 按「评估规则」计算 leadQuality / intentHeat，产出槽位 JSON（下方契约）
+        ↓
+python scripts/follow_priority.py --lead-quality <高|中|低> --intent-heat <热|温|冷>
+        ↓ 把脚本输出的 followPriority 写回槽位 JSON
+python scripts/render_profile.py --data profile.json -o out.html
+        ↓
+模板 templates/profile.html + JSON → 固定版式 HTML（枚举色值、布局全由模板决定）
+```
+
+1. **职责边界**：布局、样式、枚举→色值映射固定在只读模板 `templates/profile.html`；AI 的产出物只有槽位 JSON。禁止在上下文中现编 HTML、禁止改写模板内容。
+2. **先落盘再调用**：槽位 JSON 先写为文件（如 `profile.json`），再执行渲染脚本；缺 `--data` / 校验失败时修正 JSON 后重跑，不得改脚本或模板来绕过校验。
+3. **信任脚本校验**：脚本对必填字段、枚举值域、字数上限、话术条数做全量断言，任何一项违规即退出码 2 拒绝渲染——出现校验失败说明 JSON 不合契约，回头改 JSON。
+4. **安全**：所有槽位值经 HTML 转义后注入，话术文本不支持任何 HTML 标签。
+5. **followPriority 由脚本计算**：两档评分定档后必须调用 `scripts/follow_priority.py` 取值，把脚本输出写入槽位 JSON；禁止自行查表或直接填写。渲染脚本会再次校验一致性，与交叉表不符的 followPriority 将被拒绝渲染（退出码 2）。
+
 ## 输出内容契约
 
-无论何种形态，内容必须包含（可按调用方要求组织为 JSON / markdown / 网页等）：
+无论何种形态，内容必须包含（可按调用方要求组织为 JSON / markdown / 网页等；网页形态以槽位 JSON 形式交付给渲染脚本）：
 
 1. `customerId`（客户标识）
 2. 转化阶段标签：**未绑店** / **已绑店未首单**
 3. `leadQuality` ∈ {高, 中, 低}
 4. `intentHeat` ∈ {热, 温, 冷}
-5. `followPriority` ∈ {P0, P1, P2, P3}
+5. `followPriority` ∈ {P0, P1, P2, P3}（**由 scripts/follow_priority.py 查表得出**，必须与 leadQuality × intentHeat 交叉表一致）
 6. `reading`（≤300 字）
 7. `strategy`（≤300 字，与阶段一致）
 8. `script`（2–3 条，每条独立可用、角度互补，与阶段一致）
@@ -122,7 +151,7 @@ tags:
 
 1. **禁止虚构意向信号**：所有判断须能溯源到输入字段；字段未填只能表述"未提供/数据有限"，不得脑补动机。
 2. **禁止硬承诺**：不得出现具体价格、收益数字、时效承诺（如"月入 X 美元""7 天出单"）。
-3. **枚举严格**：三项评分只取规定枚举值，不得输出"较高/P0.5"等变体。
+3. **枚举严格**：三项评分只取规定枚举值，不得输出"较高/P0.5"等变体；followPriority 必须来自脚本计算，不得手填偏离交叉表的值。
 4. **阶段一致**：未绑店客户不得输出促首单话术，反之亦然。
 5. **字数与条数**：reading ≤300、strategy ≤300、script 2–3 条且单条 ≤200、合计 ≤500（中文字符），超限必须收敛；条数不足 2 不得交付，凑不出第 3 条时给 2 条即可。
 6. **不输出信息完整度**：`infoCompleteness` 由调用方系统按五层基准规则计算（问卷五项 / 联系方式 / 基础档案 / 渠道归因 / 绑店），不属本 skill 输出范围；话术中可以描述"资料有限"，但不得给出完整度数值或百分比。

@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>客户画像报告 {{customerId}}</title>
+<style>
+  :root {
+    --primary: #409EFF;
+    --success: #67C23A;
+    --warning: #E6A23C;
+    --danger:  #F56C6C;
+    --info:    #909399;
+    --text-primary:   #303133;
+    --text-regular:   #606266;
+    --text-secondary: #909399;
+    --border-base:    #DCDFE6;
+    --border-light:   #E4E7ED;
+    --border-lighter: #EBEEF5;
+    --fill-blank: #FFFFFF;
+    --fill-page:  #F2F3F5;
+    --box-shadow: 0 2px 12px 0 rgba(0, 0, 0, .1);
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 24px 16px 40px;
+    background: var(--fill-page);
+    color: var(--text-primary);
+    font-family: "Helvetica Neue", Helvetica, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", Arial, sans-serif;
+    font-size: 14px;
+    font-weight: 400;
+    -webkit-font-smoothing: antialiased;
+  }
+  .report { max-width: 900px; margin: 0 auto; }
+
+  /* ===== el-card ===== */
+  .el-card {
+    background-color: var(--fill-blank);
+    border: 1px solid var(--border-lighter);
+    border-radius: 4px;
+    box-shadow: var(--box-shadow);
+    overflow: hidden;
+  }
+  .el-card__header {
+    padding: 15px 20px;
+    border-bottom: 1px solid var(--border-lighter);
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .el-card__body { padding: 20px; }
+  .header-bar {
+    width: 3px;
+    height: 14px;
+    border-radius: 2px;
+    background: var(--primary);
+    flex: none;
+  }
+
+  /* ===== el-tag（枚举槽位 → 固定色值）===== */
+  .tag {
+    display: inline-block;
+    height: 32px;
+    line-height: 30px;
+    padding: 0 10px;
+    font-size: 12px;
+    font-weight: 500;
+    border: 1px solid;
+    border-radius: 4px;
+    white-space: nowrap;
+  }
+  .tag--small { height: 24px; line-height: 22px; padding: 0 8px; }
+  .tag--primary { background: rgba(64, 158, 255, .1);   border-color: rgba(64, 158, 255, .2);   color: var(--primary); }
+  .tag--success { background: rgba(103, 194, 58, .1);   border-color: rgba(103, 194, 58, .2);   color: var(--success); }
+  .tag--warning { background: rgba(230, 162, 60, .1);   border-color: rgba(230, 162, 60, .2);   color: var(--warning); }
+  .tag--danger  { background: rgba(245, 108, 108, .1);  border-color: rgba(245, 108, 108, .2);  color: var(--danger); }
+  .tag--info    { background: rgba(144, 147, 153, .1);  border-color: rgba(144, 147, 153, .2);  color: var(--info); }
+
+  /* ===== 页头卡片 ===== */
+  .page-header .el-card__body {
+    padding: 20px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+  .page-header h1 { margin: 0 0 8px; font-size: 20px; font-weight: 600; color: var(--text-primary); }
+  .page-header .meta { font-size: 13px; color: var(--text-secondary); }
+
+  /* ===== 评分卡 ===== */
+  .scores {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    margin: 16px 0;
+  }
+  .score-card .el-card__body { padding: 18px 20px 16px; }
+  .stat-label { font-size: 13px; color: var(--text-secondary); }
+  .stat-value { margin: 8px 0 4px; font-size: 30px; font-weight: 700; line-height: 1.2; }
+  .stat-divider { height: 1px; background: var(--border-lighter); margin: 12px 0 8px; }
+  .stat-hint { font-size: 12px; color: var(--text-secondary); }
+  .stat-value--primary { color: var(--primary); }
+  .stat-value--success { color: var(--success); }
+  .stat-value--warning { color: var(--warning); }
+  .stat-value--danger  { color: var(--danger); }
+  .stat-value--info    { color: var(--info); }
+
+  /* ===== 正文段落 ===== */
+  .card-section { margin-bottom: 16px; }
+  .card-text {
+    margin: 0;
+    font-size: 14px;
+    color: var(--text-regular);
+    line-height: 1.8;
+    white-space: pre-wrap;
+  }
+
+  /* ===== 话术条目（由页面底部模板片段克隆填充）===== */
+  .script-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 14px 0;
+  }
+  .script-item + .script-item { border-top: 1px solid var(--border-lighter); }
+  .script-item-index { flex: none; }
+  .script-item-text {
+    margin: 0;
+    font-size: 14px;
+    color: var(--text-regular);
+    line-height: 1.8;
+    white-space: pre-wrap;
+  }
+
+  /* ===== el-alert ===== */
+  .el-alert {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 16px;
+    border-radius: 4px;
+    font-size: 13px;
+    margin-top: 20px;
+  }
+  .el-alert--info { background-color: #F4F4F5; color: var(--info); }
+  .el-alert__dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; flex: none; }
+</style>
+</head>
+<body>
+  <div class="report">
+
+    <section class="el-card page-header">
+      <div class="el-card__body">
+        <div>
+          <h1>客户画像报告</h1>
+          <div class="meta">客户ID：{{customerId}}　·　生成时间：{{generatedAt}}</div>
+        </div>
+        <span class="tag tag--{{stageClass}}">{{stage}}</span>
+      </div>
+    </section>
+
+    <section class="scores">
+      <div class="el-card score-card">
+        <div class="el-card__body">
+          <div class="stat-label">线索质量 leadQuality</div>
+          <div class="stat-value stat-value--{{leadQualityClass}}">{{leadQuality}}</div>
+          <div class="stat-divider"></div>
+          <div class="stat-hint">业务价值与配合度</div>
+        </div>
+      </div>
+      <div class="el-card score-card">
+        <div class="el-card__body">
+          <div class="stat-label">意向热度 intentHeat</div>
+          <div class="stat-value stat-value--{{intentHeatClass}}">{{intentHeat}}</div>
+          <div class="stat-divider"></div>
+          <div class="stat-hint">当下推进的紧迫度</div>
+        </div>
+      </div>
+      <div class="el-card score-card">
+        <div class="el-card__body">
+          <div class="stat-label">跟进优先级 followPriority</div>
+          <div class="stat-value stat-value--{{followPriorityClass}}">{{followPriority}}</div>
+          <div class="stat-divider"></div>
+          <div class="stat-hint">销售行动节奏</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="el-card card-section">
+      <div class="el-card__header"><span class="header-bar"></span>线索速读</div>
+      <div class="el-card__body">
+        <p class="card-text">{{reading}}</p>
+      </div>
+    </section>
+
+    <section class="el-card card-section">
+      <div class="el-card__header"><span class="header-bar"></span>转化策略</div>
+      <div class="el-card__body">
+        <p class="card-text">{{strategy}}</p>
+      </div>
+    </section>
+
+    <section class="el-card card-section">
+      <div class="el-card__header"><span class="header-bar"></span>销售话术</div>
+      <div class="el-card__body">
+        <div class="scripts"><!--SCRIPT_ITEMS--></div>
+      </div>
+    </section>
+
+    <div class="el-alert el-alert--info" role="alert">
+      <span class="el-alert__dot"></span>本报告基于脱敏档案信号生成，结论仅供参考
+    </div>
+  </div>
+
+  <!-- 话术条目片段：渲染脚本提取后逐条克隆填充，不会出现在最终输出中 -->
+  <template id="tpl-script-item">
+    <div class="script-item">
+      <span class="tag tag--primary tag--small script-item-index">话术 {{scriptIndex}}</span>
+      <p class="script-item-text">{{scriptText}}</p>
+    </div>
+  </template>
+</body>
+</html>
