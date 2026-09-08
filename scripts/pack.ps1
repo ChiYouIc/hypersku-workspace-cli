@@ -44,8 +44,8 @@ Write-Host '==============================' -ForegroundColor Cyan
 Write-Host ''
 Write-Host '[1/2] 编译二进制文件 ...' -ForegroundColor Yellow
 $LdFlags = "-X github.com/hypersku/hypersku-cli/internal/version.Version=$Version" +
-           " -X github.com/hypersku/hypersku-cli/internal/version.Commit=$Commit" +
-           " -X github.com/hypersku/hypersku-cli/internal/version.Date=$Date"
+" -X github.com/hypersku/hypersku-cli/internal/version.Commit=$Commit" +
+" -X github.com/hypersku/hypersku-cli/internal/version.Date=$Date"
 $BuildDir = Join-Path $ProjectRoot 'build'
 New-Item -ItemType Directory -Force -Path $BuildDir | Out-Null
 & go build "-ldflags=$LdFlags" -o (Join-Path $BuildDir "$AppName.exe") .
@@ -67,13 +67,17 @@ $AgentsSkillsRoot = Join-Path $HOME '.agents\skills'
 New-Item -ItemType Directory -Force -Path $AgentsSkillsRoot | Out-Null
 
 # 清理本工具旧安装痕迹：旧版统一的 ehub 目录 + 旧无前缀能力域目录 + 当前前缀目录（避免残留旧结构）
-$OldDirs = @('ehub',
-             'after-sales', 'after-sales-apply', 'customer', 'customer-profile-analysis',
-             'domestic-exception-handling', 'domestic-third-trade-exception', 'logistics', 'purchase', 'warehouse',
-             'hypersku-auth', 'hypersku-cli',
-             'hypersku-after-sales', 'hypersku-after-sales-apply', 'hypersku-customer', 'hypersku-customer-profile-analysis',
-             'hypersku-domestic-exception-handling', 'hypersku-domestic-third-trade-exception', 'hypersku-logistics',
-             'hypersku-purchase', 'hypersku-warehouse')
+$OldDirs = @('hypersku-auth', 
+    'hypersku-cli',
+    'hypersku-after-sales', 
+    'hypersku-after-sales-apply', 
+    'hypersku-customer', 
+    'hypersku-customer-profile-analysis',
+    'hypersku-domestic-exception-handling',
+    'hypersku-domestic-third-trade-exception',
+    'hypersku-logistics',
+    'hypersku-purchase', 
+    'hypersku-warehouse')
 foreach ($d in $OldDirs) {
     $target = Join-Path $AgentsSkillsRoot $d
     if (Test-Path $target) { Remove-Item -Path $target -Recurse -Force }
@@ -95,3 +99,13 @@ Write-Host ''
 Write-Host '打包完成 OK' -ForegroundColor Green
 Write-Host ("  - 二进制: " + $BinFile)
 Write-Host ("  - Skills: " + $AgentsSkillsRoot)
+
+# ========== 写入环境变量 ========
+$userPath = [Environment]::GetEnvironmentVariable("Path", "User")
+if ($userPath -notlike "*$BinDir") {
+    $newUserPath = $userPath + ";" + $BinDir
+    [Environment]::SetEnvironmentVariable("Path", $newUserPath, "User")
+    Write-Host "  - 已添加到用户环境变量 Path: $BinDir"
+} else {
+    Write-Host "  - 环境变量已存在，无需重复添加"
+}
