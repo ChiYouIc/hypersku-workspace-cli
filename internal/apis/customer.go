@@ -30,6 +30,33 @@ var DurationTypeMap = map[int]string{
 	7: "> 3 years",
 }
 
+var ServiceInterestMap = map[int]string{
+	1: "Dropshipping — 采购并履约单件订单",
+	2: "DTC 品牌店铺 — 为您的品牌定制产品与包装",
+	3: "POD 定制化生产 — 低起订的按需印制服务",
+	4: "Merch 周边礼品 — 从零制作品牌周边或创作者周边",
+	5: "Wholesale 批发 — 批量采购；可整单或单件发货",
+}
+
+var NicheMap = map[int]string{
+	1: "女装",
+	2: "宠物用品",
+	3: "消费类电子产品",
+	4: "健康及美容",
+	5: "家居装饰",
+	6: "其它",
+	7: "母婴",
+	8: "鞋履",
+}
+
+var CustomerTagMap = map[int]string{
+	0: "默认",
+	1: "老用户",
+	2: "新用户",
+	3: "潜在用户",
+	4: "流失用户",
+}
+
 type CustomerInfoApi struct {
 	http httpclient.Client
 }

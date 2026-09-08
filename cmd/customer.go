@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/hypersku/hypersku-cli/internal/apis"
@@ -43,8 +44,8 @@ var getCustomerDetailCmd = &cobra.Command{
 		fmt.Fprintf(&sb, "DS 经验：%s\n", durationTypeText(info.EngagedTime))
 		fmt.Fprintf(&sb, "周广告预算：%s\n", weeklyAdBudgetText(info.WeeklyAdBudget))
 		fmt.Fprintf(&sb, "月订单量预期：%s\n", orderVolumeText(info.OrderVolume))
-		fmt.Fprintf(&sb, "细分市场：%d\n", info.Niche)
-		fmt.Fprintf(&sb, "意向服务：%s\n", nonEmptyOrNone(info.ServiceInterest))
+		fmt.Fprintf(&sb, "细分市场：%s\n", nicheText(info.Niche))
+		fmt.Fprintf(&sb, "意向服务：%s\n", serviceInterestText(info.ServiceInterest))
 		fmt.Fprintln(&sb, "【基础档案】")
 		fmt.Fprintf(&sb, "公司：%s\n", nonEmptyOrNone(info.Company))
 		fmt.Fprintf(&sb, "国家：%s\n", nonEmptyOrNone(info.CountryName))
@@ -81,17 +82,8 @@ func nonEmptyOrNone(s string) string {
 }
 
 func customerTagText(v int) string {
-	switch v {
-	case 0:
-		return "默认"
-	case 1:
-		return "老用户"
-	case 2:
-		return "新用户"
-	case 3:
-		return "潜在用户"
-	case 4:
-		return "流失用户"
+	if s, ok := apis.CustomerTagMap[v]; ok {
+		return s
 	}
 	return fmt.Sprint(v)
 }
@@ -123,6 +115,36 @@ func orderVolumeText(v int) string {
 		return s
 	}
 	return fmt.Sprint(v)
+}
+
+// 细分市场枚举转文案，命中不了时展示原始值
+func nicheText(v int) string {
+	if s, ok := apis.NicheMap[v]; ok {
+		return s
+	}
+	return fmt.Sprint(v)
+}
+
+// 意向服务为多选逗号串（如 "1,3"），逐项映射后以顿号拼接；未填写时展示 -
+func serviceInterestText(s string) string {
+	if strings.TrimSpace(s) == "" {
+		return "-"
+	}
+	parts := strings.Split(s, ",")
+	texts := make([]string, 0, len(parts))
+	for _, p := range parts {
+		n, err := strconv.Atoi(strings.TrimSpace(p))
+		if err != nil {
+			texts = append(texts, p)
+			continue
+		}
+		if t, ok := apis.ServiceInterestMap[n]; ok {
+			texts = append(texts, t)
+		} else {
+			texts = append(texts, p)
+		}
+	}
+	return strings.Join(texts, "、")
 }
 
 func init() {
