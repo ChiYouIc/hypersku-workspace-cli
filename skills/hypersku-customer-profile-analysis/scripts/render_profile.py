@@ -3,22 +3,23 @@
 render_profile.py — 客户画像 HTML 渲染器（模板 + 槽位 JSON → 成品 HTML）
 
 职责边界：
-  - AI 只产槽位 JSON（评分/策略/话术），本脚本负责装配成固定版式的 HTML。
+  - AI 只产槽位 JSON（评分/策略/话术/完整度），本脚本负责装配成固定版式的 HTML。
   - 模板只读（templates/profile.html），本脚本不改任何样式与结构。
 
 用法：
   python render_profile.py --data profile.json [-o out.html] [--stdout]
 
-槽位 JSON 契约（与 SKILL.md 输出内容契约一致）：
+槽位 JSON 契约（与 SKILL.md 输出内容契约一致，v3.0.0 增 infoCompletenessLevel）：
   {
-    "customerId":   "12345",                  // 必填
-    "stage":        "未绑店",                  // 必填，枚举：未绑店 | 已绑店未首单
-    "leadQuality":  "高",                     // 必填，枚举：高 | 中 | 低
-    "intentHeat":   "热",                     // 必填，枚举：热 | 温 | 冷
-    "followPriority":"P0",                    // 必填，枚举：P0 | P1 | P2 | P3
-    "reading":      "...",                    // 必填，≤300 字
-    "strategy":     "...",                    // 必填，≤300 字
-    "script":       ["...", "..."]            // 必填，2-3 条，单条 ≤200 字
+    "customerId":            "12345",          // 必填
+    "stage":                 "未绑店",          // 必填，枚举：未绑店 | 已绑店未首单
+    "leadQuality":           "高",             // 必填，枚举：高 | 中 | 低
+    "intentHeat":            "热",             // 必填，枚举：热 | 温 | 冷
+    "followPriority":        "P0",             // 必填，枚举：P0 | P1 | P2 | P3
+    "infoCompletenessLevel": "高",             // 必填（v3.0.0 新增），枚举：低 | 中 | 高
+    "reading":               "...",            // 必填，≤300 字
+    "strategy":              "...",            // 必填，≤300 字
+    "script":                ["...", "..."]    // 必填，2-3 条，单条 ≤200 字
   }
 """
 
@@ -37,14 +38,16 @@ from follow_priority import calculate as calc_follow_priority
 # 契约定义
 # ---------------------------------------------------------------------------
 
-ENUM_STAGE   = {"未绑店", "已绑店未首单"}
-ENUM_QUALITY = {"高", "中", "低"}
-ENUM_HEAT    = {"热", "温", "冷"}
-ENUM_PRIORITY = {"P0", "P1", "P2", "P3"}
+ENUM_STAGE       = {"未绑店", "已绑店未首单"}
+ENUM_QUALITY     = {"高", "中", "低"}
+ENUM_HEAT        = {"热", "温", "冷"}
+ENUM_PRIORITY    = {"P0", "P1", "P2", "P3"}
+ENUM_COMPLETENESS = {"低", "中", "高"}
 
 REQUIRED_FIELDS = [
     "customerId", "stage", "leadQuality", "intentHeat",
-    "followPriority", "reading", "strategy", "script",
+    "followPriority", "infoCompletenessLevel",
+    "reading", "strategy", "script",
 ]
 
 LIMITS = {"reading": 300, "strategy": 300, "script_item": 200}
@@ -55,6 +58,7 @@ CLASS_MAP = {
     "leadQuality":    {"高": "success", "中": "warning", "低": "danger"},
     "intentHeat":     {"热": "danger", "温": "warning", "冷": "info"},
     "followPriority": {"P0": "danger", "P1": "warning", "P2": "primary", "P3": "info"},
+    "infoCompleteness": {"低": "danger", "中": "warning", "高": "success"},
 }
 
 PLACEHOLDER_RE = re.compile(r"\{\{\s*([a-zA-Z]+)\s*\}\}")
@@ -75,6 +79,7 @@ def validate(data: dict) -> None:
     for field, allowed in [
         ("stage", ENUM_STAGE), ("leadQuality", ENUM_QUALITY),
         ("intentHeat", ENUM_HEAT), ("followPriority", ENUM_PRIORITY),
+        ("infoCompletenessLevel", ENUM_COMPLETENESS),
     ]:
         if data[field] not in allowed:
             fail("字段 %s 取值 %r 不在枚举 %s 内" % (field, data[field], sorted(allowed)))
@@ -123,12 +128,14 @@ def render(template_html: str, data: dict) -> str:
         "leadQuality":  esc(data["leadQuality"]),
         "intentHeat":   esc(data["intentHeat"]),
         "followPriority": esc(data["followPriority"]),
+        "infoCompleteness": esc(data["infoCompletenessLevel"]),
         "reading":      esc(data["reading"]),
         "strategy":     esc(data["strategy"]),
-        "stageClass":          CLASS_MAP["stage"][data["stage"]],
-        "leadQualityClass":    CLASS_MAP["leadQuality"][data["leadQuality"]],
-        "intentHeatClass":     CLASS_MAP["intentHeat"][data["intentHeat"]],
-        "followPriorityClass": CLASS_MAP["followPriority"][data["followPriority"]],
+        "stageClass":              CLASS_MAP["stage"][data["stage"]],
+        "leadQualityClass":        CLASS_MAP["leadQuality"][data["leadQuality"]],
+        "intentHeatClass":         CLASS_MAP["intentHeat"][data["intentHeat"]],
+        "followPriorityClass":     CLASS_MAP["followPriority"][data["followPriority"]],
+        "infoCompletenessClass":   CLASS_MAP["infoCompleteness"][data["infoCompletenessLevel"]],
     }
 
     out = template_html.replace("{{generatedAt}}", datetime.now().strftime("%Y-%m-%d %H:%M"))

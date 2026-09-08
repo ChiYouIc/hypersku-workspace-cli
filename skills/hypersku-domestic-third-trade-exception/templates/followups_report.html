@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-page-node-id="igxSmD6Aetw1RdjvHYqKAj">
+<head data-page-node-id="GovBX8sr0clrwHwuryV2AT">
+<meta charset="UTF-8" data-page-node-id="cHv3RQaWI84figZ6C4kDN9">
+<meta name="viewport" content="width=device-width, initial-scale=1.0" data-page-node-id="FFZ3frKox1mqNwY79jPAcr">
+<title>{{title}}</title>
+<style>
+  :root {
+    --primary: #409EFF;
+    --success: #67C23A;
+    --warning: #E6A23C;
+    --danger:  #F56C6C;
+    --info:    #909399;
+    --text-primary:   #303133;
+    --text-regular:   #606266;
+    --text-secondary: #909399;
+    --border-base:    #DCDFE6;
+    --border-light:   #E4E7ED;
+    --border-lighter: #EBEEF5;
+    --fill-blank: #FFFFFF;
+    --fill-page:  #F2F3F5;
+    --box-shadow: 0 2px 12px 0 rgba(0, 0, 0, .1);
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 24px 16px 40px;
+    background: var(--fill-page);
+    color: var(--text-primary);
+    font-family: "Helvetica Neue", Helvetica, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", Arial, sans-serif;
+    font-size: 14px;
+    font-weight: 400;
+    -webkit-font-smoothing: antialiased;
+  }
+  .report { max-width: 1000px; margin: 0 auto; }
+
+  /* ===== el-card ===== */
+  .el-card {
+    background-color: var(--fill-blank);
+    border: 1px solid var(--border-lighter);
+    border-radius: 4px;
+    box-shadow: var(--box-shadow);
+    overflow: hidden;
+    margin-bottom: 16px;
+  }
+  .el-card__header {
+    padding: 15px 20px;
+    border-bottom: 1px solid var(--border-lighter);
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .el-card__body { padding: 20px; }
+  .header-bar {
+    width: 3px;
+    height: 14px;
+    border-radius: 2px;
+    background: var(--primary);
+    flex: none;
+  }
+
+  /* ===== tag ===== */
+  .tag {
+    display: inline-block;
+    height: 28px;
+    line-height: 26px;
+    padding: 0 10px;
+    font-size: 12px;
+    font-weight: 500;
+    border: 1px solid;
+    border-radius: 4px;
+    white-space: nowrap;
+  }
+  .tag--small { height: 22px; line-height: 20px; padding: 0 8px; font-size: 12px; }
+  .tag--primary { background: rgba(64, 158, 255, .1);   border-color: rgba(64, 158, 255, .2);   color: var(--primary); }
+  .tag--success { background: rgba(103, 194, 58, .1);   border-color: rgba(103, 194, 58, .2);   color: var(--success); }
+  .tag--warning { background: rgba(230, 162, 60, .1);   border-color: rgba(230, 162, 60, .2);   color: var(--warning); }
+  .tag--danger  { background: rgba(245, 108, 108, .1);  border-color: rgba(245, 108, 108, .2);  color: var(--danger); }
+  .tag--info    { background: rgba(144, 147, 153, .1);  border-color: rgba(144, 147, 153, .2);  color: var(--info); }
+
+  /* ===== 页头 ===== */
+  .page-header .el-card__body { padding: 20px 24px; }
+  .page-header h1 { margin: 0 0 8px; font-size: 22px; font-weight: 600; color: var(--text-primary); }
+  .page-header .meta { font-size: 13px; color: var(--text-secondary); margin-bottom: 12px; }
+  .page-header .query-line { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .query-line .label { color: var(--text-secondary); font-size: 13px; }
+
+  /* ===== totals 三联 ===== */
+  .totals {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+  .total-card .el-card__body { padding: 18px 20px 16px; }
+  .stat-label { font-size: 13px; color: var(--text-secondary); }
+  .stat-value { margin: 8px 0 0; font-size: 28px; font-weight: 700; line-height: 1.2; color: var(--primary); }
+  .stat-divider { height: 1px; background: var(--border-lighter); margin: 12px 0 8px; }
+  .stat-hint { font-size: 12px; color: var(--text-secondary); }
+
+  /* ===== 数据表 ===== */
+  .el-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .el-table th, .el-table td {
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--border-lighter);
+    text-align: left;
+    vertical-align: middle;
+  }
+  .el-table th {
+    background: #fafafa;
+    color: var(--text-regular);
+    font-weight: 600;
+    font-size: 13px;
+  }
+  .el-table td.num, .el-table th.num { text-align: right; font-variant-numeric: tabular-nums; }
+  .el-table tr.total-row td { font-weight: 700; background: #fafbfc; }
+  .empty-row td { text-align: center; color: var(--text-secondary); padding: 24px; }
+
+  /* ===== 矩阵分组色 ===== */
+  .matrix-key-cell {
+    display: inline-block;
+    min-width: 56px;
+    text-align: center;
+  }
+
+  /* ===== el-alert ===== */
+  .el-alert {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 16px;
+    border-radius: 4px;
+    font-size: 13px;
+    margin-top: 8px;
+  }
+  .el-alert--info { background-color: #F4F4F5; color: var(--info); }
+  .el-alert__dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; flex: none; }
+</style>
+</head>
+<body data-page-node-id="4GqVnYYf6AAVAp9SXLJOWv">
+  <div class="report" data-page-node-id="oeKjZkT8iIhviNi5mLjQzk">
+
+    <!-- 页头 -->
+    <section class="el-card page-header" data-page-node-id="F6ARhmqlbpXGBgWJWjqWgH">
+      <div class="el-card__body" data-page-node-id="W3jTKuw3g3Bkq2pqFQqD4L">
+        <h1 data-page-node-id="Wp7zB2NBodLrvnNqFQ46Dt">{{title}}</h1>
+        <div class="meta" data-page-node-id="jyBTZtUmtLoAiTCjyiJzwb">生成时间：{{generatedAt}}</div>
+        <div class="query-line" data-page-node-id="AfUpAjPasob3ZJymEvLQJj">
+          <span class="label" data-page-node-id="5k44W3jZVA73nPE5oTlgv9">本批次查询：</span>
+          <span class="tag tag--primary" data-page-node-id="mQVZCGEuG2ExBtpSbiNArB">{{queryStatusLabel}}</span>
+          <span class="tag tag--warning" data-page-node-id="uwcjQw5UQPPwRMzUdHuJei">{{querySubStatusLabel}}</span>
+          <span class="tag tag--info" data-page-node-id="wdGpT6ogHRmn2QPrvUusyX">买家ID: {{queryBuyerLabel}}</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- 批次总览三联 -->
+    <section class="totals" data-page-node-id="pgMRPmfqMG2asesNAdlsHK">
+      <div class="el-card total-card" data-page-node-id="pgqN7jOaVlHNk5aRTMiHsY">
+        <div class="el-card__body" data-page-node-id="RW6kjDMhybsoV0nLdHtaz4">
+          <div class="stat-label" data-page-node-id="jTI5IEiALqFWuIcONMCsQX">本批次订单数</div>
+          <div class="stat-value" data-page-node-id="DFYbMn01feQXr1LXmibp48">{{totalOrderCount}}</div>
+          <div class="stat-divider" data-page-node-id="O3lCxMP3hYgCBNM7NXAL6a"></div>
+          <div class="stat-hint" data-page-node-id="jhREjbrQV3sl5IvTVfrqGP">Distinct MonitorOrderId</div>
+        </div>
+      </div>
+      <div class="el-card total-card" data-page-node-id="LP9014QuhyA3D3Zx3oUbpj">
+        <div class="el-card__body" data-page-node-id="aX6TjhReBQVY4cDM7gFyP2">
+          <div class="stat-label" data-page-node-id="V49niIGYMDAbiKC72Te6BA">物流记录数</div>
+          <div class="stat-value" data-page-node-id="l4TEupAwtGNCWkKJ6PIjyz">{{totalLogisticsCount}}</div>
+          <div class="stat-divider" data-page-node-id="t2j4uybNjp6oQWpCYtsHDv"></div>
+          <div class="stat-hint" data-page-node-id="OW7gnMELqf9mimI6kZIOf2">逐订单展开的 logistics 行数</div>
+        </div>
+      </div>
+      <div class="el-card total-card" data-page-node-id="QJFPleHt9HiNnj8RHdNliS">
+        <div class="el-card__body" data-page-node-id="NI7EnFBzEAndZxoihBHiSa">
+          <div class="stat-label" data-page-node-id="Y1EsMi13wH41cZqkse7hZr">留言总数</div>
+          <div class="stat-value" data-page-node-id="JYN4FlugDkiAW5VyrfGE9I">{{totalMessageCount}}</div>
+          <div class="stat-divider" data-page-node-id="SmKp5OwgUERIJlOV03rrGJ"></div>
+          <div class="stat-hint" data-page-node-id="UQTDYardLfVPm7W9e7zci8">message-list 累计返回条数</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 主状态 × 子状态 矩阵 -->
+    <section class="el-card section-matrix" data-page-node-id="klM8vPNtbbTRievfZPiFvQ">
+      <div class="el-card__header" data-page-node-id="naYA1lTvNnhMBrKaFcGNTp"><span class="header-bar" data-page-node-id="JPmHIQ3q3lhjS5vogEe1Id"></span>主状态 × 子状态 矩阵</div>
+      <div class="el-card__body" style="padding:0;" data-page-node-id="BNbegCFsJpys4yC6JAW178">
+        <table class="el-table" data-page-node-id="49sMEaoCasCZOfFDZ0WIuc">
+          <thead data-page-node-id="EgdHChtpp9bCRB2sonV8xo">
+            <tr data-page-node-id="NBFqlHAyFRnIwmzBKZquLw">
+              <th data-page-node-id="jXVJEHATnZ5ycvFIH1lCse">主状态</th>
+              <th class="num" data-page-node-id="M68rSHWRPPwJTqA7r8OAmY">待处理</th>
+              <th class="num" data-page-node-id="UP4oIroaoyKaxYvyGxFJNQ">处理中</th>
+              <th class="num" data-page-node-id="JIqGvLVsyDqPfNtEv5AF5C">已处理</th>
+              <th class="num" data-page-node-id="lN3tTZ0HU3IJCNLiKcnoXN">已关闭</th>
+              <th class="num" data-page-node-id="dN2PMNJkIS5zLb09pzG2V0">已拒绝</th>
+              <th class="num" data-page-node-id="uiE2zobG1FDooqo7JtDGKl">合计</th>
+            </tr>
+          </thead>
+          <tbody data-page-node-id="jJUjerxgSpmQyySFF9kz4T">
+            <!--MATRIX_ROWS-->
+            <tr class="total-row" data-page-node-id="G25nRM66Ti87FOH1emcVrN">
+              <td data-page-node-id="lvli8obDopZykiLDUEXwSD">合计</td>
+              <td class="num" data-page-node-id="I8bKcdHVEA8fWHKx2OfLNR">{{matrixTotalPending}}</td>
+              <td class="num" data-page-node-id="hxh24caTajT0tS55Ib9mfz">{{matrixTotalProcessing}}</td>
+              <td class="num" data-page-node-id="awjGf0KOxtGw6x11AcbuE6">{{matrixTotalResolved}}</td>
+              <td class="num" data-page-node-id="DgbCi4TXHCY3r1XYFUaJp6">{{matrixTotalClosed}}</td>
+              <td class="num" data-page-node-id="3cT1xZh92BvML8juZcWd88">{{matrixTotalRejected}}</td>
+              <td class="num" data-page-node-id="WsBzkKfpxgvQ18nxzu4MfF">{{matrixTotalTotal}}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- 仓库分布 -->
+    <section class="el-card section-warehouse" data-page-node-id="gdSbr1OMqr0uVNPfTi0vGs">
+      <div class="el-card__header" data-page-node-id="u1O5BOn6MeuRZxqEzlukte"><span class="header-bar" data-page-node-id="a7Slkf2kcB1Ra7eigXiEYv"></span>Top 仓库分布</div>
+      <div class="el-card__body" style="padding:0;" data-page-node-id="Rw8Ms8jmFBoJUC7rBMcnuU">
+        <table class="el-table" data-page-node-id="akFqNKu8CCTHrNhUmSDwQv">
+          <thead data-page-node-id="Dcqj3sQrCzX6Z3dMQyrmJK">
+            <tr data-page-node-id="xXe0Yf36pxTmTYBTjrmvD7">
+              <th style="width:60px;" data-page-node-id="SIlESHeEdT659oZpNJtSa1">#</th>
+              <th data-page-node-id="gxWWsVwAfmsk8aI7TtrqcA">仓库</th>
+              <th class="num" data-page-node-id="PoRkmC4GNifxecIv2fGEXu">订单数</th>
+            </tr>
+          </thead>
+          <tbody data-page-node-id="OyK9AJGai13L7E3A331fBj">
+            <!--WAREHOUSE_ROWS-->
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- 采购来源分布 -->
+    <section class="el-card section-source" data-page-node-id="5XSAsOTlSWPRa2twZnML9H">
+      <div class="el-card__header" data-page-node-id="RujsSsb76R4mEAZcjTICxW"><span class="header-bar" data-page-node-id="3BEyKuOdh0Fo6mUpeewIqj"></span>Top 采购来源分布</div>
+      <div class="el-card__body" style="padding:0;" data-page-node-id="EDd5axZM8YMitpafmOP09B">
+        <table class="el-table" data-page-node-id="Mvtp8pmXPfANOOjvC2VXyw">
+          <thead data-page-node-id="SLV8GiaKTslyhw98s7eFQf">
+            <tr data-page-node-id="bHa9h7Av4wClZRabg6n0fa">
+              <th style="width:80px;" data-page-node-id="BJfnIfd7Uu0YqA5X0ICMEX">来源 Key</th>
+              <th data-page-node-id="bzk4zIvpkMZJG7S8Emqe3S">来源</th>
+              <th class="num" data-page-node-id="q5m3K5HNs49owyrYlYsMm4">订单数</th>
+            </tr>
+          </thead>
+          <tbody data-page-node-id="bia6cJAPcfYn8OFveiM0DC">
+            <!--SOURCE_ROWS-->
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- 处理人活跃度 -->
+    <section class="el-card section-handler" data-page-node-id="iJ563okGd3sgEc7G6NZsw4">
+      <div class="el-card__header" data-page-node-id="usN2rUbYvoXfEOhOwFeoP8"><span class="header-bar" data-page-node-id="6byXiGGP4LnrNWncsXXeWt"></span>处理人活跃度（按留言聚合）</div>
+      <div class="el-card__body" style="padding:0;" data-page-node-id="QSbn0bzAhuFRua4Ct7i2b3">
+        <table class="el-table" data-page-node-id="HNOhDJXO17IIHlxekd3cLw">
+          <thead data-page-node-id="FZb8FaxhVoGAMTmYJENNaM">
+            <tr data-page-node-id="mxUIkdGc3M9XuDrasPm8ja">
+              <th style="width:60px;" data-page-node-id="JOPvwyl5OovlOw2gtsOZPJ">#</th>
+              <th data-page-node-id="3EiqbaIh6psjysuUrSFEnP">留言人</th>
+              <th class="num" data-page-node-id="ywE08thoa59fhLcZqFZGFV">留言条数</th>
+              <th class="num" data-page-node-id="TBDUDsBhP0gQ3dAxjvV2WQ">覆盖订单数</th>
+              <th data-page-node-id="r6tKOG2eOaS4sMZ5Fod9QJ">最近一次留言</th>
+            </tr>
+          </thead>
+          <tbody data-page-node-id="jaFOGGUZIhlHvNhlgMeFRB">
+            <!--HANDLER_ROWS-->
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- 每日留言量 -->
+    <section class="el-card section-daily" data-page-node-id="q73lEXQ5AbnlL8ZC0YFzU0">
+      <div class="el-card__header" data-page-node-id="WOYkgPI8If3kZvrib4erMJ"><span class="header-bar" data-page-node-id="Hx2jd4WnDDZFVVAhY0E4ck"></span>每日留言量</div>
+      <div class="el-card__body" style="padding:0;" data-page-node-id="5UV59yN8uOFSQhlzt1bick">
+        <table class="el-table" data-page-node-id="xq4tQZx2ohHkLOWfuFIDCV">
+          <thead data-page-node-id="mEB6uJ5Bq8YWAOhHKe4nOU">
+            <tr data-page-node-id="e4z953RlZPUHFR8LoGbVAz">
+              <th data-page-node-id="ge5nRD1F42KRcgwOOxhv08">日期</th>
+              <th class="num" data-page-node-id="zGOvgl1LDJcO3HJaQVNVH7">留言条数</th>
+            </tr>
+          </thead>
+          <tbody data-page-node-id="YLWgCGwpQimIRPTyDTNNPp">
+            <!--DAILY_ROWS-->
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <div class="el-alert el-alert--info" role="alert" data-page-node-id="tzhRj7cMWngFPCv3urs4s8">
+      <span class="el-alert__dot" data-page-node-id="lv3GADssX9YvNYN1yoiz6t"></span>本报告由 page-list + 多次 message-list 聚合得出；矩阵 total 行已通过一致性自检
+    </div>
+  </div>
+
+  <!-- 行片段：矩阵主体 -->
+  <template id="tpl-matrix-row" data-page-node-id="yZffC27cWCpx3c7Le2MEOY">
+    <tr data-page-node-id="f0mSdx2nudpAhbfRhy6yoG">
+      <td data-page-node-id="QBCB8M7OItKoaEFcd5S1R2"><span class="tag tag--small tag--info matrix-key-cell" data-page-node-id="AyEwiTjQug3Rwp6mhrNHjO">{{rowMainKey}}</span>&nbsp;{{rowMainStatus}}</td>
+      <td class="num" data-page-node-id="A4DrV0UaqJEVGFWQQQqA8D">{{rowPending}}</td>
+      <td class="num" data-page-node-id="Phb1eijBFqiJuHFoJ5doqf">{{rowProcessing}}</td>
+      <td class="num" data-page-node-id="gaMnTACO7BUNm339gqGhR1">{{rowResolved}}</td>
+      <td class="num" data-page-node-id="2U8eC3UEGE0VY4XhUs5iE7">{{rowClosed}}</td>
+      <td class="num" data-page-node-id="KiL5K1098dTSgCoSlg15m2">{{rowRejected}}</td>
+      <td class="num" data-page-node-id="Hiw0He8kbhCWZT7NyJ0Ijs">{{rowTotal}}</td>
+    </tr>
+  </template>
+
+  <!-- 行片段：仓库 -->
+  <template id="tpl-warehouse-row" data-page-node-id="TXOm5MCtBePSIT28GPyghc">
+    <tr data-page-node-id="ipsVFzT9G8BFfIvDlq0RbT">
+      <td data-page-node-id="ioOnrvGMvhKDUWwWGZyGrb">{{rowIdx}}</td>
+      <td data-page-node-id="w1WD0vgdTuGxaz35xKS2ET">{{rowName}}</td>
+      <td class="num" data-page-node-id="54qMe0kvybFSZj1BjeiPb3">{{rowCount}}</td>
+    </tr>
+  </template>
+
+  <!-- 行片段：来源 -->
+  <template id="tpl-source-row" data-page-node-id="Gr6S7ENCkSK2JGTH9yWUBk">
+    <tr data-page-node-id="amGoSEesYENHQfErkpFJMb">
+      <td data-page-node-id="USthIxYiVLAeX2P4zdaATD">{{rowKey}}</td>
+      <td data-page-node-id="9tN8Ar5ppZZc4Kekk30zHy">{{rowName}}</td>
+      <td class="num" data-page-node-id="AENFPSCIud3kRjHAgQLAbL">{{rowCount}}</td>
+    </tr>
+  </template>
+
+  <!-- 行片段：处理人 -->
+  <template id="tpl-handler-row" data-page-node-id="y2uD0xGJQoi8fhWIdETZs2">
+    <tr data-page-node-id="iwhlWQwh91Ob6J7D31LTgf">
+      <td data-page-node-id="dr7GvPHHAabIxKB2dqBqhM">{{rowIdx}}</td>
+      <td data-page-node-id="LCOUWHReufJ8HVm0UMXNeK">{{rowName}}</td>
+      <td class="num" data-page-node-id="1fZKA6i30CrdVGCmUx3xNs">{{rowMessageCount}}</td>
+      <td class="num" data-page-node-id="TPJAridmtYAkISWcTSvI1N">{{rowOrdersCount}}</td>
+      <td data-page-node-id="NhuS6j2Nkfni1XXlF3BxlT">{{rowLastMessageAt}}</td>
+    </tr>
+  </template>
+
+  <!-- 行片段：每日留言 -->
+  <template id="tpl-daily-row" data-page-node-id="TAOk8EW3deEaE703Nfh6kW">
+    <tr data-page-node-id="2X6VMT74B942Xi6WowrEyz">
+      <td data-page-node-id="UJnTrr2zv3AuFFvQ7KZ9Ck">{{rowDate}}</td>
+      <td class="num" data-page-node-id="yQofmAVzShm8LTjULbTVzX">{{rowCount}}</td>
+    </tr>
+  </template>
+</body>
+</html>
