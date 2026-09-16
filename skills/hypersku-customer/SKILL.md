@@ -5,7 +5,7 @@ display_name_en: Customer Management
 description_zh: 通过 hypersku-cli customer 子命令查询客户档案（是否已支付/绑定店铺/联系方式/DS 经验/广告预算/细分市场/客户标签/渠道来源）、客户订单详情、订单物流、收货地址、退件工单及客户画像（订单统计/日订单量/交易统计/交易流水）。
 description_en: Query customer profiles, order details, order logistics, shipping addresses, return tickets, and customer profile statistics (order counts, daily orders, transaction totals and bills) via hypersku-cli customer commands.
 description: HyperSKU 客户管理。当用户提到客户档案/是否有已支付订单/绑定店铺/联系方式/客户订单/订单详情/收货地址/税号/VAT/退件工单/订单统计/日订单数量/交易统计/交易流水时，通过 hypersku-cli customer 子命令查询对应数据。
-version: 2.0.0
+version: 3.0.0
 author: owen
 tags:
   - hypersku
@@ -26,6 +26,8 @@ tags:
 | 查询订单物流 | 根据客户订单号查询物流单号及承运商（不含轨迹详情） | `hypersku-cli customer order logistics <orderId>` | [logistics.md](references/logistics.md) |
 | 查询收货地址 | 根据客户订单号查询收货人、地址、税号、VAT 等信息 | `hypersku-cli customer order address <orderId>` | [address.md](references/address.md) |
 | 查询订单退件 | 根据客户订单号查询退件工单详情 | `hypersku-cli customer order return <customerOrderId>` | [return.md](references/return.md) |
+| 按交易号查包裹拦截 | 根据交易号查询包裹拦截工单列表 | `hypersku-cli customer order intercept <tradeId>` | [intercept.md](references/intercept.md) |
+| 按交易号查包裹退件 | 根据交易号查询包裹退件工单列表 | `hypersku-cli customer order return-by-trade <tradeId>` | [return-by-trade.md](references/return-by-trade.md) |
 | 查询订单统计 | 根据客户 ID 查询时间范围内的总订单数、日均/日最大/日最小订单数 | `hypersku-cli customer profile order count <customerId> --start --end` | [profile-order-count.md](references/profile-order-count.md) |
 | 查询日订单数量 | 根据客户 ID 查询时间范围内每日订单数（付款/履约/超期/退款） | `hypersku-cli customer profile order daily <customerId> --start --end` | [profile-order-daily.md](references/profile-order-daily.md) |
 | 查询交易统计 | 根据客户 ID 查询时间范围内的总交易额、实际成交额、退款金额、客单价 | `hypersku-cli customer profile transaction count <customerId> --start --end` | [profile-transaction-count.md](references/profile-transaction-count.md) |
@@ -40,6 +42,8 @@ tags:
 - 用户提到"物流/单号/承运商/快递/tracking"时，执行 `order logistics <orderId>` 以表格展示物流单号与承运商。
 - 用户提到"地址/收货/税号/VAT/邮编/收件人"时，执行 `order address <orderId>` 展示收货地址详情。
 - 用户提到"退件/退货工单/退件记录"时，执行 `order return <customerOrderId>` 展示退件工单详情。
+- 用户提到"包裹拦截/拦截工单/拦截"并提供交易号时，执行 `order intercept <tradeId>` 按交易号查询包裹拦截工单。
+- 用户提到"包裹退件/退件工单"并提供交易号时，执行 `order return-by-trade <tradeId>` 按交易号查询包裹退件工单。
 - 用户提到"订单统计/总订单数/日均订单/客户下了多少单"时，执行 `profile order count <customerId> --start --end` 展示订单统计。
 - 用户提到"每天订单/日订单/每日下单量/付款/履约/超期订单数"时，执行 `profile order daily <customerId> --start --end` 展示每日订单数量。
 - 用户提到"交易统计/交易额/成交额/退款金额/客单价"时，执行 `profile transaction count <customerId> --start --end` 展示交易统计。

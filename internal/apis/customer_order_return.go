@@ -151,3 +151,22 @@ func (api *CustomerOrderReturnApi) GetOrderReturnInfo(customerOrderId string) (*
 
 	return &result.Data.Rows[0], nil
 }
+
+// PageByThirdOrderId 按交易号（第三方订单号）查询退件/拦截工单
+func (api *CustomerOrderReturnApi) PageByThirdOrderId(thirdOrderId string, workOrderType int) (*ApiPageResponse[CustomerOrderReturnInfo], error) {
+	body := map[string]any{
+		"page":                  1,
+		"limit":                 20,
+		"orderStatus":           3,
+		"returnOrderSearchType": 1,
+		"type":                  1,
+		"workOrderType":         workOrderType,
+		"thirdOrderId":          thirdOrderId,
+	}
+
+	result := ApiPageResponse[CustomerOrderReturnInfo]{}
+	if err := api.http.Post("/api/tenant/return/order/list", body, &result); err != nil {
+		return nil, err
+	}
+	return &result, nil
+}

@@ -154,7 +154,7 @@ VAT：%s`,
 	},
 }
 
-// 查询订单退件
+// 查询订单退件（按客户订单号）
 var getCustomerOrderReturnInfo = &cobra.Command{
 	Use:   "return [customerOrderId]",
 	Short: "查询客户订单退件工单",
@@ -191,13 +191,82 @@ var getCustomerOrderReturnInfo = &cobra.Command{
 	},
 }
 
+// 按交易号查询包裹拦截
+var getInterceptByTradeId = &cobra.Command{
+	Use:   "intercept [tradeId]",
+	Short: "按交易号查询包裹拦截",
+	Long:  "通过交易号（第三方订单号）查询包裹拦截工单列表",
+	Args:  cobra.ExactArgs(1),
+	Run: func(cmd *cobra.Command, args []string) {
+		res, err := apis.NewCustomerOrderReturnApi().PageByThirdOrderId(args[0], 2)
+		if err != nil {
+			cmd.PrintErrf("查询包裹拦截失败: %v\n", err)
+			return
+		}
+		if res == nil || res.Data == nil || len(res.Data.Rows) == 0 {
+			cmd.Println("未查询到拦截记录")
+			return
+		}
+		var sb strings.Builder
+		fmt.Fprintf(&sb, "交易号: %s   共 %d 条\n\n", args[0], res.Data.Total)
+		for i, row := range res.Data.Rows {
+			if i > 0 {
+				fmt.Fprintln(&sb)
+			}
+			fmt.Fprintf(&sb, "【拦截工单 %d】\n", i+1)
+			fmt.Fprintf(&sb, "  工单号: %s\n", row.WorkOrderCode)
+			fmt.Fprintf(&sb, "  快递单号: %s\n", row.TrackingNumber)
+			fmt.Fprintf(&sb, "  仓库代码: %s\n", row.WarehouseCode)
+			fmt.Fprintf(&sb, "  状态: %s\n", row.StatusStr)
+			fmt.Fprintf(&sb, "  创建时间: %s\n", row.CrtTime)
+		}
+		cmd.Print(sb.String())
+	},
+}
+
+// 按交易号查询包裹退件
+var getReturnByTradeId = &cobra.Command{
+	Use:   "return-by-trade [tradeId]",
+	Short: "按交易号查询包裹退件",
+	Long:  "通过交易号（第三方订单号）查询包裹退件工单列表",
+	Args:  cobra.ExactArgs(1),
+	Run: func(cmd *cobra.Command, args []string) {
+		res, err := apis.NewCustomerOrderReturnApi().PageByThirdOrderId(args[0], 1)
+		if err != nil {
+			cmd.PrintErrf("查询包裹退件失败: %v\n", err)
+			return
+		}
+		if res == nil || res.Data == nil || len(res.Data.Rows) == 0 {
+			cmd.Println("未查询到退件记录")
+			return
+		}
+		var sb strings.Builder
+		fmt.Fprintf(&sb, "交易号: %s   共 %d 条\n\n", args[0], res.Data.Total)
+		for i, row := range res.Data.Rows {
+			if i > 0 {
+				fmt.Fprintln(&sb)
+			}
+			fmt.Fprintf(&sb, "【退件工单 %d】\n", i+1)
+			fmt.Fprintf(&sb, "  工单号: %s\n", row.WorkOrderCode)
+			fmt.Fprintf(&sb, "  快递单号: %s\n", row.TrackingNumber)
+			fmt.Fprintf(&sb, "  仓库代码: %s\n", row.WarehouseCode)
+			fmt.Fprintf(&sb, "  工单类型: %s\n", apis.WorkOrderType[row.WorkOrderType])
+			fmt.Fprintf(&sb, "  状态: %s\n", row.StatusStr)
+			fmt.Fprintf(&sb, "  创建时间: %s\n", row.CrtTime)
+		}
+		cmd.Print(sb.String())
+	},
+}
+
 func init() {
 	// 订单
 	customerOrderCmd.AddCommand(
 		getCustomerOrderInfo,       // 商品信息
 		getCustomerOrderLogistics,  // 物流
 		getCustomerOrderAddress,    // 地址
-		getCustomerOrderReturnInfo, // 退件
+		getCustomerOrderReturnInfo, // 退件（按客户订单号）
+		getInterceptByTradeId,      // 拦截（按交易号）
+		getReturnByTradeId,         // 退件（按交易号）
 	)
 
 	customerCmd.AddCommand(customerOrderCmd)

@@ -93,7 +93,75 @@ var getWarehouseTracking = &cobra.Command{
 	},
 }
 
+// 仓库列表查询
+var warehouseListCmd = &cobra.Command{
+	Use:   "list",
+	Short: "按名称查询仓库",
+	Long:  "按仓库名称分页查询仓库列表",
+	Run: func(cmd *cobra.Command, args []string) {
+		name, _ := cmd.Flags().GetString("name")
+		page, _ := cmd.Flags().GetInt("page")
+		limit, _ := cmd.Flags().GetInt("limit")
+
+		result, err := apis.NewWarehouseApi().GetWarehousePage(name, page, limit)
+		if err != nil {
+			cmd.PrintErrf("查询仓库列表失败: %v\n", err)
+			return
+		}
+		if result == nil || len(result.Rows) == 0 {
+			fmt.Fprintf(cmd.OutOrStdout(), "共 %d 条\n\n无数据", result.Total)
+			return
+		}
+		fmt.Fprintf(cmd.OutOrStdout(), "当前页码：%d，页大小：%d，总数：%d\n\n", page, limit, result.Total)
+		fmt.Fprintln(cmd.OutOrStdout(), "|ID|仓库名称|联系人|联系电话|地址|状态|")
+		fmt.Fprintln(cmd.OutOrStdout(), "|----|----|----|----|----|----|")
+		for _, row := range result.Rows {
+			fmt.Fprintf(cmd.OutOrStdout(), "|%d|%s|%s|%s|%s%s|%s|\n",
+				row.ID, row.Name, row.ContactsName, row.ContactsPhone, row.ProvinceName, row.CityName, row.StatusStr)
+		}
+	},
+}
+
+// 物流列表查询
+var logisticsListCmd = &cobra.Command{
+	Use:   "logistics-list",
+	Short: "按名称查询物流",
+	Long:  "按物流名称分页查询物流列表",
+	Run: func(cmd *cobra.Command, args []string) {
+		name, _ := cmd.Flags().GetString("name")
+		page, _ := cmd.Flags().GetInt("page")
+		limit, _ := cmd.Flags().GetInt("limit")
+
+		result, err := apis.NewWarehouseApi().GetLogisticsPage(name, 0, page, limit)
+		if err != nil {
+			cmd.PrintErrf("查询物流列表失败: %v\n", err)
+			return
+		}
+		if result == nil || len(result.Rows) == 0 {
+			fmt.Fprintf(cmd.OutOrStdout(), "共 %d 条\n\n无数据", result.Total)
+			return
+		}
+		fmt.Fprintf(cmd.OutOrStdout(), "当前页码：%d，页大小：%d，总数：%d\n\n", page, limit, result.Total)
+		fmt.Fprintln(cmd.OutOrStdout(), "|ID|名称|别名|物流类型|报价方式|状态|")
+		fmt.Fprintln(cmd.OutOrStdout(), "|----|----|----|----|----|----|")
+		for _, row := range result.Rows {
+			fmt.Fprintf(cmd.OutOrStdout(), "|%d|%s|%s|%d|%d|%d|\n",
+				row.ID, row.Name, row.Alias, row.ShippingType, row.PriceType, row.Status)
+		}
+	},
+}
+
 func init() {
+	warehouseListCmd.Flags().StringP("name", "n", "", "仓库名称")
+	warehouseListCmd.Flags().IntP("page", "p", 1, "页码")
+	warehouseListCmd.Flags().IntP("limit", "l", 20, "每页条数")
+
+	logisticsListCmd.Flags().StringP("name", "n", "", "物流名称")
+	logisticsListCmd.Flags().IntP("page", "p", 1, "页码")
+	logisticsListCmd.Flags().IntP("limit", "l", 20, "每页条数")
+
 	warehouseCmd.AddCommand(getWarehouseTracking)
+	warehouseCmd.AddCommand(warehouseListCmd)
+	warehouseCmd.AddCommand(logisticsListCmd)
 	rootCmd.AddCommand(warehouseCmd)
 }

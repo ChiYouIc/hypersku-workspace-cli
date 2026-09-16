@@ -1,6 +1,6 @@
 # HyperSKU CLI
 
-> 基于 Go 构建的高效命令行工具，提供灵活的第三方业务 API 调用能力，涵盖售后、客户、物流、采购等场景。
+> 基于 Go 构建的高效命令行工具，提供灵活的第三方业务 API 调用能力，涵盖售后、客户、物流、采购、供应商、第三方平台、AI 分析等场景。
 
 ## 目录结构
 
@@ -11,21 +11,32 @@ hypersku-cli/
 ├── cmd/                       # cobra 命令定义（薄命令层，只做编排）
 │   ├── root.go                # 根命令（全局 flags、配置加载、依赖初始化）
 │   ├── after_sales.go         # 售后管理命令
+│   ├── ai_analysis.go         # AI 分析查询命令
 │   ├── customer.go            # 客户管理命令
+│   ├── customer_order.go      # 客户订单子命令（含拦截/退件）
+│   ├── customer_profile.go    # 客户画像命令
+│   ├── domestic_third_trade_exception.go  # 国内第三方交易异常订单管理命令
+│   ├── extra_service.go       # 增值服务查询命令
 │   ├── logistics.go           # 物流管理命令
 │   ├── purchase.go            # 采购订单管理命令
-│   ├── warehouse.go           # 仓库管理命令
-│   └── domestic_third_trade_exception.go  # 国内第三方交易异常订单管理命令
+│   ├── purchase_after_sales.go # 采购售后查询命令
+│   ├── supplier.go            # 供应商管理查询命令
+│   ├── third_app_api.go       # 第三方平台数据查询命令
+│   └── warehouse.go           # 仓库管理命令（含仓库/物流列表）
 ├── internal/                  # 内部业务逻辑（不对外暴露）
 │   ├── apis/                  # 第三方 API 封装
 │   │   ├── types.go           # 通用类型定义
 │   │   ├── after_sales.go     # 售后 API
+│   │   ├── ai_analysis.go     # AI 分析 API
 │   │   ├── customer.go        # 客户 API
 │   │   ├── customer_order_return.go  # 客户订单退件工单 API
+│   │   ├── extra_service.go   # 增值服务 API
 │   │   ├── logistics.go       # 物流 API
 │   │   ├── purchase.go        # 采购 API
-│   │   ├── warehouse.go       # 仓库 API
-│   │   └── domestic_third_trade_exception.go  # 国内第三方交易异常订单 API
+│   │   ├── purchase_after_sales.go  # 采购售后 API
+│   │   ├── supplier.go        # 供应商 API
+│   │   ├── third_app_api.go   # 第三方平台（1688/Shopify）API
+│   │   └── warehouse.go       # 仓库 API
 │   ├── config/                # 配置加载（config.json）
 │   ├── httpclient/            # HTTP 客户端基础封装
 │   └── version/               # 版本信息
@@ -120,83 +131,134 @@ build\hypersku-cli.exe purchase info 123456
 | `-v, --version` | bool | `false` | 显示版本信息 |
 | `-h, --help` | bool | `false` | 显示帮助信息 |
 
-### 子命令
+### 认证管理 `auth`
 
-| 命令 | 说明 |
-|------|------|
-| `after-sales` | 售后管理 |
-| `customer` | 客户管理 |
-| `logistics` | 物流管理 |
-| `purchase` | 采购订单管理 |
-| `warehouse` | 仓库管理 |
-| `domestic-third-trade-exception` | 国内第三方交易异常订单管理 |
+| 命令格式 | 说明 |
+|----------|------|
+| `auth login <access-token>` | 使用已有 token 登录 |
+| `auth login --api-user <用户名> --api-password <密码>` | 用户名密码登录 |
+| `auth status` | 查看当前登录状态 |
+| `auth logout` | 退出登录（删除本地 token） |
 
-#### 售后管理 `after-sales`
+### 售后管理 `after-sales`
 
-| 命令 | 说明 |
-|------|------|
-| `1688 <thirdOrderId>` | 查询 1688 售后工单 |
-| `goods <thirdOrderId> <refundId>` | 查询 1688 售后商品 |
-| `detail <refundId>` | 查询 1688 售后详情 |
-| `message <refundId>` | 查询 1688 售后留言 |
+| 命令格式 | 说明 |
+|----------|------|
+| `after-sales 1688 <thirdOrderId>` | 查询 1688 售后工单 |
+| `after-sales 1688 goods <thirdOrderId> <refundId>` | 查询 1688 售后商品 |
+| `after-sales 1688 detail <refundId>` | 查询 1688 售后详情 |
+| `after-sales 1688 message <refundId>` | 查询 1688 售后留言 |
 
-#### 客户管理 `customer`
+### 客户管理 `customer`
 
-| 命令 | 说明 |
-|------|------|
-| `order info <orderId>` | 查询订单信息 |
-| `order logistics <orderId>` | 查询订单物流信息 |
-| `order address <orderId>` | 查询订单地址信息 |
-| `order return <customerOrderId>` | 查询客户订单退件工单 |
+| 命令格式 | 说明 |
+|----------|------|
+| `customer detail <customerId>` | 查询客户档案 |
+| `customer order info <orderId>` | 查询客户订单信息 |
+| `customer order logistics <orderId>` | 查询订单物流信息 |
+| `customer order address <orderId>` | 查询订单地址信息 |
+| `customer order return <customerOrderId>` | 查询客户订单退件工单（按客户订单号） |
+| `customer order intercept <tradeId>` | 按交易号查询包裹拦截工单 |
+| `customer order return-by-trade <tradeId>` | 按交易号查询包裹退件工单 |
+| `customer profile order count <customerId>` | 查询客户订单统计 |
+| `customer profile order daily <customerId>` | 查询客户日订单数量 |
+| `customer profile transaction count <customerId>` | 查询客户交易统计 |
+| `customer profile transaction bills <customerId>` | 查询客户交易流水 |
 
-#### 物流管理 `logistics`
+### 物流管理 `logistics`
 
-| 命令 | 说明 |
-|------|------|
-| `tracking <trackingNumber>` | 查询物流轨迹 |
+| 命令格式 | 说明 |
+|----------|------|
+| `logistics tracking <trackingNumber>` | 查询物流轨迹 |
 
-#### 采购订单管理 `purchase`
+### 采购订单管理 `purchase`
 
-| 命令 | 说明 |
-|------|------|
-| `info <orderId>` | 查询采购订单详情 |
-| `page` | 分页查询采购订单 |
-| `log <orderId>` | 查询采购日志 |
-| `logistics <orderId>` | 查询采购订单国际物流轨迹 |
+| 命令格式 | 说明 |
+|----------|------|
+| `purchase info <orderId>` | 查询采购订单详情 |
+| `purchase info page` | 分页查询采购订单 |
+| `purchase log <orderId>` | 查询采购日志 |
+| `purchase logistics <orderId>` | 查询采购订单国际物流轨迹 |
 
-`purchase page` 支持以下过滤参数：
+### 仓库管理 `warehouse`
 
-| Flag | 默认值 | 说明 |
-|------|--------|------|
-| `-p, --page` | `1` | 页码 |
-| `-l, --limit` | `10` | 页大小 |
-| `--start` | `""` | 开始时间，格式：`yyyy-MM-dd HH:mm:ss` |
-| `--end` | `""` | 结束时间，格式：`yyyy-MM-dd HH:mm:ss` |
-| `--thirdOrderId` | `""` | 交易号、第三方订单号 |
-| `--trackingNumber` | `""` | 物流单号 |
+| 命令格式 | 说明 |
+|----------|------|
+| `warehouse tracking <trackingNumber>` | 查询仓库物流轨迹（快递签收、仓库签收、入库、物流轨迹、仓库操作） |
+| `warehouse list --name <name>` | 按名称查询仓库列表 |
+| `warehouse logistics-list --name <name>` | 按名称查询物流列表 |
 
-#### 仓库管理 `warehouse`
+### 采购售后查询 `purchase-after-sales`
 
-| 命令 | 说明 |
-|------|------|
-| `tracking <trackingNumber>` | 查询仓库物流轨迹（快递/仓库签收、入库、物流轨迹、仓库操作） |
+| 命令格式 | 说明 |
+|----------|------|
+| `purchase-after-sales by-trade <tradeId>` | 按交易号查询采购售后工单 |
+| `purchase-after-sales by-order <orderId>` | 按订单号查询采购售后工单 |
 
-#### 国内第三方交易异常订单管理 `domestic-third-trade-exception`
+### 供应商管理 `supplier`
 
-| 命令 | 说明 |
-|------|------|
-| `page-list` | 分页查询国内第三方交易异常订单（含物流明细） |
-| `message-list <monitorOrderId> <monitorLogisticsId>` | 查询异常订单留言列表 |
+| 命令格式 | 说明 |
+|----------|------|
+| `supplier detail <supplierId>` | 查询供应商详情 |
+| `supplier list --name <name>` | 分页查询供应商列表 |
+| `supplier pur-count <loginId1,loginId2>` | 按登录 ID 查询采购次数 |
+| `supplier ranking` | 供应商排行信息 |
+| `supplier spu-list` | 供应商 SPU 信息 |
+| `supplier after-sales` | 供应商售后信息 |
+| `supplier fulfillment` | 供应商履约信息 |
 
-`domestic-third-trade-exception page-list` 支持以下过滤参数：
+### 第三方平台数据查询 `third-app-api`
 
-| Flag | 默认值 | 说明 |
-|------|--------|------|
-| `-p, --page` | `1` | 页码 |
-| `-l, --limit` | `10` | 页大小 |
-| `-s, --hypersku-status` | `0` | 异常主状态（1-未发货，2-假发货，3-未到货，4-假签收，5-未签收，6-退件，7-丢件，8-未入库，9-丢包裹，10-无货） |
-| `-c, --hypersku-sub-status` | `[1,2]` | 异常子状态列表（1-待处理，2-处理中，3-已处理，4-已关闭，5-已拒绝） |
-| `-b, --buyer-id` | `""` | 买家 ID（可选） |
+| 命令格式 | 说明 |
+|----------|------|
+| `third-app-api ali-logistics <orderId>` | 查询 1688 订单物流信息 |
+| `third-app-api ali-logistics-trace <orderId>` | 查询 1688 订单物流轨迹 |
+| `third-app-api ali-order-detail <orderId>` | 查询 1688 订单详情 |
+| `third-app-api ali-refund-detail <refundId>` | 查询 1688 退款单详情 |
+| `third-app-api ali-refund-list <orderId>` | 查询 1688 退款单列表 |
+| `third-app-api ali-refund-operations <refundId>` | 查询 1688 退款单操作记录 |
+| `third-app-api ali-product --id <id>` | 查询 1688 产品信息（按 ID） |
+| `third-app-api ali-product --url <url>` | 查询 1688 产品信息（按链接） |
+| `third-app-api ali-supplier --login-id <id>` | 查询 1688 供应商信息 |
+| `third-app-api ali-mix-config --member-id <id>` | 查询 1688 卖家混批设置 |
+| `third-app-api ali-sub-accounts` | 查询 1688 子账号列表 |
+| `third-app-api shop-product --store-id <id>` | 查询店铺产品 |
+| `third-app-api shop-order-list --store-id <id>` | 查询店铺订单列表 |
+| `third-app-api shop-inventory --store-id <id>` | 查询店铺库存 |
+
+### AI 分析查询 `ai-analysis`
+
+| 命令格式 | 说明 |
+|----------|------|
+| `ai-analysis intl-logistics` | 国际物流异常分析（分页） |
+| `ai-analysis intl-logistics-count` | 国际物流异常风险等级统计 |
+| `ai-analysis inventory` | 库存动销分析（分页） |
+| `ai-analysis inventory-count` | 库存动销风险等级统计 |
+| `ai-analysis purchase` | 采购售后分析（分页） |
+| `ai-analysis purchase-count` | 采购售后风险等级统计 |
+| `ai-analysis supplier` | 供应商 AI 分析（分页） |
+| `ai-analysis supplier-count` | 供应商等级统计 |
+| `ai-analysis customer-order` | 客户订单 AI 分析（分页） |
+| `ai-analysis customer-order-count` | 客户订单风险等级统计 |
+| `ai-analysis task-progress <type>` | AI 任务风险等级汇总 |
+
+> 所有分页命令支持 `--page`/`-p`（页码）和 `--limit`/`-l`（每页条数）参数。
+
+### 增值服务查询 `extra-service`
+
+| 命令格式 | 说明 |
+|----------|------|
+| `extra-service list` | 查询增值服务名称列表 |
+| `extra-service warehouses <serviceId>` | 查询增值服务关联的仓储 |
+| `extra-service goods <serviceId>` | 查询增值服务关联的商品 |
+| `extra-service warehouse-add <repertoryId>` | 查询仓库开通的增值服务 |
+
+### 国内第三方交易异常订单管理 `domestic-third-trade-exception`
+
+| 命令格式 | 说明 |
+|----------|------|
+| `domestic-third-trade-exception page-list` | 分页查询国内第三方交易异常订单（含物流明细） |
+| `domestic-third-trade-exception message-list <monitorOrderId> <monitorLogisticsId>` | 查询异常订单留言列表 |
 
 ## Makefile 命令
 
