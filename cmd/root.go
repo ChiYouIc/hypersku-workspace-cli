@@ -44,6 +44,8 @@ var rootCmd = &cobra.Command{
 // Execute 将所有子命令添加到根命令并设置 flags。
 // 由 main.main() 调用，只需执行一次。
 func Execute() {
+	// 禁用内置的 completion 命令（内部工具不需要 shell 自动补全脚本生成）
+	rootCmd.CompletionOptions.DisableDefaultCmd = true
 	// 状态类命令通过退出码表达结果，错误信息由 Execute 统一控制，避免 cobra 重复打印
 	rootCmd.SilenceUsage = true
 	rootCmd.SilenceErrors = true
