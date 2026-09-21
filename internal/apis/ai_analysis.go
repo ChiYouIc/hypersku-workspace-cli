@@ -22,6 +22,13 @@ type AiAnalysisQuery struct {
 	HyperskuStatus int    `json:"hyperskuStatus,omitempty"` // 异常状态
 }
 
+type AiInternationalLogisticsQuery struct {
+	Limit     int    `json:"limit"`
+	Page      int    `json:"page"`
+	RiskLevel int    `json:"riskLevel,omitempty"` // AI 风险等级
+	SearchKey string `json:"searchKey,omitempty"` // AI 风险等级
+}
+
 // AiBaseCount 统计结果
 type AiBaseCount struct {
 	Target string `json:"target"`
@@ -35,8 +42,8 @@ type AiInternationalLogisticsRow struct {
 	ID                        int    `json:"id"`
 	CustomerID                int    `json:"customerId"`
 	CustomerUsername          string `json:"customerUsername"`
-	OrderID                   int64  `json:"orderId"`
-	CustomerOrderID           int64  `json:"customerOrderId"`
+	OrderID                   string `json:"orderId"`
+	CustomerOrderID           string `json:"customerOrderId"`
 	PaymentTime               string `json:"paymentTime"`
 	WarehouseID               int    `json:"warehouseId"`
 	WarehouseName             string `json:"warehouseName"`
@@ -55,6 +62,7 @@ type AiInternationalLogisticsRow struct {
 	AiSummary                 string `json:"aiSummary"`
 	AiRiskLevel               int    `json:"aiRiskLevel"`
 	AiSummaryUpdTime          string `json:"aiSummaryUpdTime"`
+	OrderRemark               string `json:"orderRemark"`
 }
 
 // ============ 库存动销分析 ============
@@ -97,7 +105,7 @@ type AiPurchaseRow struct {
 	CustomerID     int                  `json:"customerId"`
 	ImgURL         string               `json:"imgUrl"`
 	DataID         string               `json:"dataId"`
-	ThirdOrderID   int64                `json:"thirdOrderId"`
+	ThirdOrderID   string               `json:"thirdOrderId"`
 	TrackingNumber string               `json:"trackingNumber"`
 	Type           string               `json:"type"`
 	RiskLevel      int                  `json:"riskLevel"`
@@ -169,7 +177,7 @@ func NewAiAnalysisApi() *AiAnalysisApi {
 }
 
 // InternationalLogisticsTable 国际物流异常分析表格数据
-func (api *AiAnalysisApi) InternationalLogisticsTable(query AiAnalysisQuery) (*ApiPageResponse[AiInternationalLogisticsRow], error) {
+func (api *AiAnalysisApi) InternationalLogisticsTable(query AiInternationalLogisticsQuery) (*ApiPageResponse[AiInternationalLogisticsRow], error) {
 	result := ApiPageResponse[AiInternationalLogisticsRow]{}
 	if err := api.http.Post("/api/tenant/ai/analysis/table/monitor_abnormal_international_logistics", query, &result); err != nil {
 		return nil, err

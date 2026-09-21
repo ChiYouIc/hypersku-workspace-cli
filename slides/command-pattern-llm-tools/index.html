@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>一个工具，一套命令：用 Command Pattern 重构 LLM 工具调用</title>
+<link rel="stylesheet" href="file:///c:/Users/22595/etailerhub-workspace/hypersku-workspace-cli/.github/skills/html-ppt-skill/assets/fonts.css">
+<link rel="stylesheet" href="file:///c:/Users/22595/etailerhub-workspace/hypersku-workspace-cli/.github/skills/html-ppt-skill/assets/base.css">
+<link rel="stylesheet" href="style.css">
+</head>
+<body class="tpl-obsidian-claude-gradient">
+<div class="deck">
+
+  <!-- ===== 01 COVER ===== -->
+  <section class="slide is-active">
+    <div class="oc-cbg"></div><div class="oc-cgrid"></div>
+    <div class="oc-snum">01 / 16</div>
+    <div class="oc-tag">● ETAILERHUB · 技术分享</div>
+    <h1 class="oc-h1">一个工具，一套命令<br>用 Command Pattern 重构 <span class="oc-g">LLM 工具调用</span></h1>
+    <p class="oc-sub">当 MCP 工具膨胀到 50+，我们没有做 tool router，<br>而是把 MCP 收敛为单一工具，用应用内命令承载全部能力。</p>
+    <div style="margin-top:32px">
+      <span class="oc-pill">⚡ ehub-mcp · Java / Spring AI</span>
+      <span class="oc-pill">🛠 hypersku-cli · Go / Cobra</span>
+      <span class="oc-pill">🎯 上下文 / 权限 / 审计 / 扩展</span>
+    </div>
+    <aside class="notes">
+      <p>大家好，今天跟大家聊一个我们最近做的架构决策。我们做跨境供应链 SaaS，对外有一套 MCP 服务，起步跟社区惯例一样，一个业务能力注册一个工具。后来业务域涨到 14 个，工具眼看奔 50 去了，每次请求的 system prompt 越来越长，模型选工具老选错。</p>
+      <p>今天这场分享，就讲我们怎么从这个坑里爬出来的——答案有点反直觉：不是加 router，是把工具砍到一个。</p>
+    </aside>
+  </section>
+
+  <!-- ===== 02 AGENDA ===== -->
+  <section class="slide">
+    <div class="oc-cbg"></div><div class="oc-cgrid"></div>
+    <div class="oc-snum">02 / 16</div>
+    <div class="oc-tag">● AGENDA</div>
+    <h2 class="oc-h2">今天讲四件事</h2>
+    <div class="oc-steps">
+      <div class="oc-step"><div class="oc-sn">1</div><div class="oc-sc"><h4>问题：被上下文压垮的系统</h4><p>50+ 工具全量注入 prompt，token 成本、选择噪声、扩展摩擦三面受敌</p></div></div>
+      <div class="oc-step"><div class="oc-sn">2</div><div class="oc-sc"><h4>方案：一个工具，一套命令</h4><p>run_cli 单入口 + skill 可见性路由 + 应用内 Command Registry</p></div></div>
+      <div class="oc-step"><div class="oc-sn">3</div><div class="oc-sc"><h4>深挖：权限模型与设计权衡</h4><p>skill ≠ 授权；command / method 三层正交权限体系</p></div></div>
+      <div class="oc-step"><div class="oc-sn">4</div><div class="oc-sc"><h4>验证：数据、Demo 与边界</h4><p>上下文降 80%+、同一任务双方案对比、哪些场景不适合</p></div></div>
+    </div>
+    <aside class="notes">
+      <p>内容分四块。先讲问题——多工具方案是怎么被上下文压垮的。然后讲方案——一个工具加一套命令。接着往深挖，重点是权限模型和设计权衡。最后用数据、Demo 和边界收尾。全程大概 50 分钟，中间有现场跑，欢迎随时打断。</p>
+    </aside>
+  </section>
+
+  <!-- ===== 03 PROBLEM: 现状 ===== -->
+  <section class="slide">
+    <div class="oc-cbg"></div><div class="oc-cgrid"></div>
+    <div class="oc-snum">03 / 16</div>
+    <div class="oc-tag">● PROBLEM · 我们的现状</div>
+    <h2 class="oc-h2">MCP 的协议行为：<span class="oc-g">全量注入</span></h2>
+    <div class="oc-grid-3" style="margin-top:20px">
+      <div class="oc-card" style="text-align:center"><div class="oc-big oc-g" style="font-size:64px">14</div><p style="color:var(--oc-dim);margin-top:8px;font-size:13px">业务域<br>采购 / 客户 / 物流 / 售后 …</p></div>
+      <div class="oc-card" style="text-align:center"><div class="oc-big oc-g" style="font-size:64px">50+</div><p style="color:var(--oc-dim);margin-top:8px;font-size:13px">工具全量铺开<br>每域 3~8 个能力，季度递增</p></div>
+      <div class="oc-card" style="text-align:center"><div class="oc-big oc-g" style="font-size:64px">12k</div><p style="color:var(--oc-dim);margin-top:8px;font-size:13px">token 常驻开销<br>每次请求都付这个账</p></div>
+    </div>
+    <div class="oc-hl" style="margin-top:26px">💡 <b>关键机制：</b>客户端每次请求都会把服务端<b>全部工具</b>的 schema 注入 system prompt——工具是你加的，账单是每次请求都要付的。</div>
+    <aside class="notes">
+      <p>先看数字。14 个业务域——采购、客户、物流、1688 售后等等。每个域三到八个能力，全量铺开就是 50 多个工具。</p>
+      <p>这里要强调一个 MCP 的协议行为：客户端每次请求，都会把服务端全部工具的 schema 注进 system prompt。一个工具 schema 平均 150 到 300 token，50 个就是 1 万到 1 万 5。工具每加一个，所有请求的 prompt 都变长一点。工具是你加的，账单是每次请求都要付的。</p>
+    </aside>
+  </section>
+
+  <!-- ===== 04 PROBLEM: 三个连锁问题 ===== -->
+  <section class="slide">
+    <div class="oc-cbg"></div><div class="oc-cgrid"></div>
+    <div class="oc-snum">04 / 16</div>
+    <div class="oc-tag">● PROBLEM · 连锁反应</div>
+    <h2 class="oc-h2">三个连锁问题</h2>
+    <div class="oc-grid-3" style="margin-top:20px">
+      <div class="oc-card"><span class="oc-badge oc-bb">① 上下文爆炸</span>
+        <p style="color:var(--oc-dim);font-size:14px;line-height:1.65">50 schema ≈ 1w~1.5w token 常驻。三重代价：<b style="color:var(--oc-text)">直接费用</b>、挤占窗口、<b style="color:var(--oc-text)">注意力稀释</b></p></div>
+      <div class="oc-card"><span class="oc-badge oc-bo">② 选择噪声</span>
+        <p style="color:var(--oc-dim);font-size:14px;line-height:1.65">"订单到哪了" → 模型在 3 个"查询物流"工具间摇摆。description 看起来全都一样。</p></div>
+      <div class="oc-card"><span class="oc-badge oc-bp">③ 扩展摩擦</span>
+        <p style="color:var(--oc-dim);font-size:14px;line-height:1.65">加一个工具 = 加 schema + 加上下文 + 全列表辨识度重排。description 越写越"卷"。</p></div>
+    </div>
+    <div class="oc-hl" style="margin-top:26px">💡 <b>真实翻车现场：</b>用户问"订单到哪了"，模型把客户订单号当快递运单号，传给了 domestic_logistics_query——从 description 看，它们都"查询物流"。</div>
+    <aside class="notes">
+      <p>这三个问题是连锁反应。上下文爆炸是最直接的：1 万多 token 常驻 prompt，直接的钱、挤占窗口、注意力稀释——模型要在 50 段描述里找出"这一个"。</p>
+      <p>选择噪声更隐蔽。我们真实翻车过：用户问"订单到哪了"，模型在三个"查询物流"工具之间摇摆——客户订单物流、快递单号轨迹、采购物流。从 description 看，它们确实都叫"查询物流"。人类工程师都会混淆两个同名函数，模型也一样。</p>
+      <p>扩展摩擦是个恶性循环。你越加工具，description 越写越长、越写越"卷"来互相区分，而每一段辩解式描述又反过来加重上下文问题。加一个工具的边际成本越来越高。</p>
+    </aside>
+  </section>
+
+  <!-- ===== 05 WHY NOT ROUTER ===== -->
+  <section class="slide">
+    <div class="oc-cbg"></div><div class="oc-cgrid"></div>
+    <div class="oc-snum">05 / 16</div>
+    <div class="oc-tag">● PROBLEM · 为什么没有 tool router</div>
+    <h2 class="oc-h2">Router 不是答案</h2>
+    <div class="oc-grid-2" style="margin-top:24px">
+      <div class="oc-card"><span class="oc-badge oc-bb">做不了</span>
+        <p style="color:var(--oc-dim);font-size:14px;line-height:1.65">router 需要前置检索/模型层，带来新的改造成本、延迟与准确率问题；当时的客户端（百炼、MCP 桌面端）也不具备配合 router 的能力。</p></div>
+      <div class="oc-card"><span class="oc-badge oc-bo">不够</span>
+        <p style="color:var(--oc-dim);font-size:14px;line-height:1.65">router 只解决"选哪个"，没解决"上下文常驻"——就算每次只选中 3 个工具，另外 47 个 schema 依然躺在 prompt 里。</p></div>
+    </div>
+    <div class="oc-hl" style="margin-top:26px">💡 这些方案的共同盲区：都默认"工具 schema 必须出现在上下文里"，只是想办法让它<b>少一点</b>，没有人质疑它<b>必须在</b>。</div>
+    <aside class="notes">
+      <p>那做 tool router 呢？我们考虑过，但有两个问题。第一是做不了：router 需要一个前置的检索或模型层，当时改造成本、延迟、准确率都是问题，客户端也不配合。</p>
+      <p>第二是做了也不够。router 只解决"选哪个"，没解决"上下文常驻"。就算你每次只选 3 个工具注进 prompt，另外 47 个的 schema 还是躺在那里。路由错误时还要整段兜底。</p>
+      <p>所有这些方案的共同盲区：都默认"工具 schema 必须出现在上下文里"，只是想办法让它少一点，没人质疑它是不是必须在。</p>
+    </aside>
+  </section>
+
+  <!-- ===== 06 SOLUTION: 转向 ===== -->
+  <section class="slide">
+    <div class="oc-cbg"></div><div class="oc-cgrid"></div>
+    <div class="oc-snum">06 / 16</div>
+    <div class="oc-tag">● SOLUTION · 一个转向</div>
+    <h2 class="oc-h2">从 <span class="oc-g">选工具</span> 到 <span class="oc-g">调命令</span></h2>
+    <p class="oc-sub" style="text-align:center;margin:14px auto 0">转机来自 hypersku-cli——同一个业务域，Go + Cobra 的命令行工具，给人用。</p>
+    <div class="oc-hl" style="margin-top:28px">💡 <b>关键洞察：</b>命令行的帮助是<b>内省的、分层的、按需的</b>。你不会在登录时被灌输全部 50 个子命令。<br><b>人类从来不需要把 CLI 手册背进脑子，为什么模型需要？</b></div>
+    <div class="oc-hl" style="margin-top:12px;border-left-color:var(--oc-green)">🎯 <b>交互方式改变：</b>从"让模型在工具列表里<b>选</b>"，变成"让模型<b>调用</b>命令"。</div>
+    <aside class="notes">
+      <p>转机来自我们另一个工程：hypersku-cli，Go 加 Cobra 的命令行工具，覆盖同样的 14 个业务域，但它是给人用的。</p>
+      <p>命令行有一个被严重低估的特性：帮助是内省的、分层的、按需的。你不会在登录时被灌输全部 50 个子命令的完整帮助。你 hypersku-cli --help 看一眼能力版图，进某个域再看第二层，具体命令 --help 看参数。</p>
+      <p>人类从来不需要把 CLI 手册背进脑子，为什么模型需要？于是关键洞察浮出水面：命令是比工具更自然的抽象。工具的协议形态要求"一次性全暴露"，命令的使用形态天然支持"按需发现"。交互方式从"让模型选"变成"让模型调用"。</p>
+    </aside>
+  </section>
+
+  <!-- ===== 07 SOLUTION: 架构图 ===== -->
+  <section class="slide">
+    <div class="oc-cbg"></div><div class="oc-cgrid"></div>
+    <div class="oc-snum">07 / 16</div>
+    <div class="oc-tag">● SOLUTION · 最终方案</div>
+    <h2 class="oc-h2">一个工具，一套命令</h2>
+    <div class="oc-grid-3" style="margin-top:18px;gap:20px">
+      <div class="oc-card" style="text-align:center;border-color:rgba(168,85,247,.35);background:rgba(124,58,237,.05)">
+        <span class="oc-badge oc-bp">MCP 入口</span>
+        <h4 class="oc-g" style="font-size:22px;margin:10px 0 6px">run_cli</h4>
+        <p style="color:var(--oc-dim);font-size:13px;line-height:1.55">一个 string 参数<br>schema 恒定 O(1)<br>上下文 ~100 token</p>
+      </div>
+      <div class="oc-card" style="text-align:center;border-color:rgba(88,166,255,.35);background:rgba(88,166,255,.05)">
+        <span class="oc-badge oc-bb">可见性路由</span>
+        <h4 class="oc-g" style="font-size:22px;margin:10px 0 6px">16 个 skill</h4>
+        <p style="color:var(--oc-dim);font-size:13px;line-height:1.55">场景命中时注入<br>按需加载命令知识<br>~0.5-1k token/域</p>
+      </div>
+      <div class="oc-card" style="text-align:center;border-color:rgba(63,185,80,.35);background:rgba(63,185,80,.05)">
+        <span class="oc-badge oc-bg">能力载体</span>
+        <h4 class="oc-g" style="font-size:22px;margin:10px 0 6px">Command</h4>
+        <p style="color:var(--oc-dim);font-size:13px;line-height:1.55">进程内方法调用<br>一命令一方法<br>不 fork 进程</p>
+      </div>
+    </div>
+    <div class="oc-hl" style="margin-top:24px">💡 <b>正名：</b>不是 CLI，不是 shell 封装——是应用内的 <b>Command Pattern</b>。一条命令 = 一个 Java 方法调用，没有 Runtime.exec，没有字符串拼接，shell 元字符没有语义生存空间。</div>
+    <aside class="notes">
+      <p>最终方案三件套。第一，MCP 收敛为单一工具 run_cli，一个 string 参数，schema 恒定，上下文占用 O(1)。</p>
+      <p>第二，16 个 skill 做可见性路由。每个 skill 按能力域划分，在合适时机告诉模型"这个域有哪些命令"。场景命中时才注入，每个域 0.5 到 1k token。</p>
+      <p>第三，Command Registry 做能力载体。命令执行是进程内的方法调用，Function 挂在 Map 上。这里要强调：这不是 CLI 封装。没有 fork 进程，没有拼 shell 字符串。分号、管道、反引号这些 shell 元字符在这里没有语义生存空间——输入被 tokenizer 按空白切分，命令语法在解析层就终结了。</p>
+    </aside>
+  </section>
+
+  <!-- ===== 08 ARCH: run_cli 设计 ===== -->
+  <section class="slide">
+    <div class="oc-cbg"></div><div class="oc-cgrid"></div>
+    <div class="oc-snum">08 / 16</div>
+    <div class="oc-tag">● ARCH · MCP 收敛为单工具</div>
+    <h2 class="oc-h2">run_cli 的设计</h2>
+    <pre class="oc-code oc-code-sm" style="margin-top:18px"><span class="cm">// CliTools.java — 唯一的 MCP 工具入口</span>
+<span class="cc">@Service</span>
+<span class="ca">@PreAuthorize("hasAuthority('tool:cli')")</span>
+public class CliTools {
+
+    <span class="cc">@McpTool</span>(name = <span class="cs">"run_cli"</span>, title = <span class="cs">"执行 CLI 命令"</span>, description = <span class="cs">"""
+        通用命令行工具入口，执行 Hypersku CLI 命令。
+        所有命令必须以 `hypersku-cli` 开头，语法：
+        `hypersku-cli &lt;命令路径&gt; [位置参数] --&lt;选项&gt;=&lt;值&gt;`"""</span>)
+    public String runCli(<span class="cc">@McpToolParam</span>(description = <span class="cs">"命令"</span>) String cliCommand) {
+        <span class="cp">if</span> (StrUtil.isBlank(cliCommand)) <span class="cp">return</span> shell.help(); <span class="cm">// 空命令 → 总帮助</span>
+        logger.info(<span class="cs">"run command: {}"</span>, cliCommand);
+        <span class="cp">return</span> this.shell.evaluate(cliCommand);
+    }
+}</pre>
+    <div class="oc-grid-3" style="margin-top:16px">
+      <div class="oc-card" style="text-align:center;padding:14px"><h4 class="oc-g" style="font-size:15px">1 个 vs N 个</h4><p style="color:var(--oc-dim);font-size:12px;line-height:1.5">schema 恒定<br>O(N) → O(1)</p></div>
+      <div class="oc-card" style="text-align:center;padding:14px"><h4 class="oc-g" style="font-size:15px">单参数有意为之</h4><p style="color:var(--oc-dim);font-size:12px;line-height:1.5">利用模型的命令行<br>语料先验</p></div>
+      <div class="oc-card" style="text-align:center;padding:14px"><h4 class="oc-g" style="font-size:15px">空命令 = 路标</h4><p style="color:var(--oc-dim);font-size:12px;line-height:1.5">返回总帮助<br>零成本兜底</p></div>
+    </div>
+    <aside class="notes">
+      <p>先看 run_cli 的代码。整个类只有一个 MCP 工具方法，一个 string 参数。为什么是 1 个而不是 N 个？一个 string 参数吃下所有命令，schema 是恒定的，不随能力增长变化。</p>
+      <p>为什么不用结构化的 command 加 args 对象？因为命令语法本身就是模型的已知心智——全世界的模型都练过海量命令行语料，--help 是它们最熟悉的内省动作。把命令当字符串，是把这个先验直接拿来用。</p>
+      <p>另一个细节：空命令返回总帮助。模型迷路的时候，有一个零成本的"回到路标"动作。</p>
+    </aside>
+  </section>
+
+  <!-- ===== 09 ARCH: skill 路由 ===== -->
+  <section class="slide">
+    <div class="oc-cbg"></div><div class="oc-cgrid"></div>
+    <div class="oc-snum">09 / 16</div>
+    <div class="oc-tag">● ARCH · skill 可见性路由</div>
+    <h2 class="oc-h2">四级渐进式披露</h2>
+    <div class="oc-lv">
+      <div class="oc-card" style="border-left:3px solid var(--oc-accent2)">
+        <div class="lv-tag" style="color:var(--oc-accent3)">L0 · MCP 工具</div>
+        <h4>run_cli</h4>
+        <p>常驻上下文<br>~100 token · 恒定</p>
+      </div>
+      <div class="oc-card" style="border-left:3px solid var(--oc-blue)">
+        <div class="lv-tag" style="color:var(--oc-blue)">L1 · skill</div>
+        <h4>域技能包</h4>
+        <p>场景命中时注入<br>~0.5-1k token/域</p>
+      </div>
+      <div class="oc-card" style="border-left:3px solid var(--oc-green)">
+        <div class="lv-tag" style="color:var(--oc-green)">L2 · --help</div>
+        <h4>运行时内省</h4>
+        <p>按次返回<br>不驻留</p>
+      </div>
+      <div class="oc-card" style="border-left:3px solid var(--oc-orange)">
+        <div class="lv-tag" style="color:var(--oc-orange)">L3 · 执行</div>
+        <h4>命令结果</h4>
+        <p>进入对话<br>模型据此决策</p>
+      </div>
+    </div>
+    <div class="oc-hl" style="margin-top:22px">💡 <b>重要区分：</b>skill 只控制"模型看得见什么"，是纯粹的<b>可见性</b>问题。<b>skill ≠ 权限</b>——技能包被注入不等于执行权被授予，真正的边界在第四章。</div>
+    <aside class="notes">
+      <p>第二层是 skill 做可见性路由。能力知识的注入由 16 个技能包承担，触发靠 frontmatter description 的描述式路由——"当用户提到物流、轨迹、快递时"，宿主按语义命中，只有被命中的技能进入上下文。</p>
+      <p>这形成四级渐进式披露。L0 是 MCP 工具 run_cli，常驻上下文，100 token 恒定。L1 是域技能包，场景命中时注入，每个域 0.5 到 1k token。L2 是 --help 运行时内省，按次返回不驻留。L3 是命令执行结果，进入对话。</p>
+      <p>这里要强调一个极其重要的区分：skill 不等于权限。技能包被注入不等于执行权被授予。可见性不是安全边界——模型可能从对话历史里学到命令名并调用它。真正的权限边界在 Spring Security 那一层，第四章会详细讲。</p>
+    </aside>
+  </section>
+
+  <!-- ===== 10 ARCH: CommandRegistry ===== -->
+  <section class="slide">
+    <div class="oc-cbg"></div><div class="oc-cgrid"></div>
+    <div class="oc-snum">10 / 16</div>
+    <div class="oc-tag">● ARCH · command 做能力载体</div>
+    <h2 class="oc-h2">Command Registry</h2>
+    <pre class="oc-code oc-code-sm" style="margin-top:16px"><span class="cm">// 一命令一方法，进程内执行</span>
+public class CommandDefinition {
+    String name;                                        <span class="cm">// 命令名</span>
+    String shortDesc; String description;               <span class="cm">// help() 的素材</span>
+    Function&lt;Map&lt;String, String&gt;, String&gt; run;          <span class="cm">// 执行函数</span>
+    Map&lt;String, CommandDefinition&gt; subCommands;         <span class="cm">// 子命令树</span>
+    List&lt;OptionDefinition&gt; options;                     <span class="cm">// --key=value</span>
+    List&lt;ArgumentDefinition&gt; arguments;                 <span class="cm">// 位置参数</span>
+}
+
+<span class="cm">// 注册：新增命令只需新增一个类</span>
+<span class="cc">@Configuration</span>
+public class ShellConfig {
+    public ShellConfig(List&lt;<span class="cc">CommandProvider</span>&gt; providers) {  <span class="cm">// Spring 自动扫描</span>
+        Shell.builder().commands(providers.stream()
+            .map(CommandProvider::command).toList()).build();
+    }
+}</pre>
+    <div class="oc-hl" style="margin-top:16px">💡 <b>新增命令 = 新增一个类</b>，注册代码零改动，符合开闭原则。执行是进程内方法调用，没有 Runtime.exec，没有字符串拼接进 shell。</div>
+    <aside class="notes">
+      <p>第三层是 Command Registry——一棵由 CommandDefinition 组成的命令树。每条命令对应一个 Function，接收解析后的参数 Map，返回字符串。</p>
+      <p>命令注册靠 CommandProvider 函数式接口，每个实现类提供一条命令，ShellConfig 注入 List 自动扫描聚合成树。新增命令只要新增一个类，注册代码零改动。</p>
+      <p>执行是进程内方法调用。evaluate 方法按空白 tokenize，根命令名强校验防止跑偏，子命令逐级分发。--help 任意位置触发帮助。命令语法在解析层终结，之后全是类型安全的 Java 方法调用。</p>
+    </aside>
+  </section>
+
+  <!-- ===== 11 ARCH: 分层对比 ===== -->
+  <section class="slide">
+    <div class="oc-cbg"></div><div class="oc-cgrid"></div>
+    <div class="oc-snum">11 / 16</div>
+    <div class="oc-tag">● ARCH · 为什么分层成立</div>
+    <h2 class="oc-h2">三层正交 vs MCP 多工具</h2>
+    <table class="oc-table" style="margin-top:18px">
+      <tr><th></th><th>我们的三层架构</th><th>MCP 多工具方案</th></tr>
+      <tr><td>可见性</td><td style="color:var(--oc-green)">skill 控制 · 按需注入</td><td style="color:var(--oc-red)">全量注入 · 无法隐藏</td></tr>
+      <tr><td>授权</td><td style="color:var(--oc-green)">Spring Security authority</td><td style="color:var(--oc-dimmer)">焊死在 @McpTool</td></tr>
+      <tr><td>执行</td><td style="color:var(--oc-green)">Command Registry · 进程内方法调用</td><td style="color:var(--oc-dimmer)">每个工具独立实现</td></tr>
+      <tr><td>变更成本</td><td style="color:var(--oc-green)">加命令不动 MCP 层</td><td style="color:var(--oc-red)">加 schema → 全客户端 prompt 变化</td></tr>
+      <tr><td>审计</td><td style="color:var(--oc-green)">单入口一行日志</td><td style="color:var(--oc-red)">N 个入口分散埋点</td></tr>
+    </table>
+    <div class="oc-hl" style="margin-top:20px">💡 <b>三层分离的本质：</b>可见性、授权、执行各自独立演进——加命令不动 MCP 层，调路由不动命令，改权限不动前两者。</div>
+    <aside class="notes">
+      <p>为什么这个分层成立？三层各管一件事，职责单一且正交。MCP 工具层管入口和协议——模型怎么调？skill 层管可见性路由——模型此刻该知道什么？command 层管能力和执行——实际能做什么？</p>
+      <p>对比 MCP 多工具方案。在那边，可见性、授权、执行全部焊死在同一个 @McpTool 注解里。你想对某客户端隐藏一个工具，做不到；你想改一个参数说明，全量客户端的 prompt 同步变化。</p>
+      <p>三层分离后，每件事都可以独立演进：加命令不动 MCP 层，调路由不动命令，改权限不动前两者。审计也收敛了——run_cli 一个入口，logger.info 一行日志就是完整的审计事实。</p>
+    </aside>
+  </section>
+
+  <!-- ===== 12 PERMISSION: 边界 ===== -->
+  <section class="slide">
+    <div class="oc-cbg"></div><div class="oc-cgrid"></div>
+    <div class="oc-snum">12 / 16</div>
+    <div class="oc-tag">● PERMISSION · 应用内 command 的天然优势</div>
+    <h2 class="oc-h2">不是 shell，权限边界更清晰</h2>
+    <div class="oc-grid-3" style="margin-top:20px">
+      <div class="oc-card" style="text-align:center"><h4 class="oc-g" style="font-size:18px">没有 shell</h4><p style="color:var(--oc-dim);font-size:13px;line-height:1.6;margin-top:8px">分号、管道、反引号<br>只是普通字符<br>注入没有落点</p></div>
+      <div class="oc-card" style="text-align:center"><h4 class="oc-g" style="font-size:18px">不 fork 进程</h4><p style="color:var(--oc-dim);font-size:13px;line-height:1.6;margin-top:8px">没有进程逃逸<br>没有环境继承<br>执行面 = 注册表里的方法</p></div>
+      <div class="oc-card" style="text-align:center"><h4 class="oc-g" style="font-size:18px">完全自主</h4><p style="color:var(--oc-dim);font-size:13px;line-height:1.6;margin-top:8px">不依赖 OS 权限<br>边界定义在应用内<br>可做到 OS 做不到的粒度</p></div>
+    </div>
+    <div class="oc-hl" style="margin-top:24px">💡 <b>三层权限模型：</b><br>skill → 可见性（模型知道什么）— <b>不是安全边界</b><br>command → 授权（允许执行什么）— Spring Security authority<br>method → 执行（真正干活）— 领域 Service 业务校验</div>
+    <aside class="notes">
+      <p>进入第四章：权限模型。很多人听到"命令"会警惕，是不是给了模型一个 shell？恰好相反，应用内 command 的权限边界比任何 OS shell 都清晰。</p>
+      <p>三个"没有"。没有 shell，分号、管道、反引号在这里只是普通字符，注入没有可执行的落点。不 fork 进程，没有逃逸、没有环境继承。不依赖 OS 权限，边界完全自主定义。</p>
+      <p>三层权限模型。skill 管可见性，是注意力分配问题，不是安全边界。command 管授权，通过 Spring Security authority。method 管执行，领域 Service 里的业务校验。这三层正交，各自独立。</p>
+    </aside>
+  </section>
+
+  <!-- ===== 13 PERMISSION: 粒度 ===== -->
+  <section class="slide">
+    <div class="oc-cbg"></div><div class="oc-cgrid"></div>
+    <div class="oc-snum">13 / 16</div>
+    <div class="oc-tag">● PERMISSION · shell 做不到的粒度</div>
+    <h2 class="oc-h2">命令树上的<span class="oc-g">任意子树</span></h2>
+    <div class="oc-steps" style="max-width:800px;margin-top:18px">
+      <div class="oc-step"><div class="oc-sn">1</div><div class="oc-sc"><h4>方法级授权</h4><p>tool:cli 放行查询类，tool:admin 才放行写操作，粒度到单条命令</p></div></div>
+      <div class="oc-step"><div class="oc-sn">2</div><div class="oc-sc"><h4>参数级授权</h4><p>拦截器拿到解析后的 Map，按参数值做策略（如只查自己 tenant 的订单）</p></div></div>
+      <div class="oc-step"><div class="oc-sn">3</div><div class="oc-sc"><h4>上下文级授权</h4><p>请求所在的会话、用户、来源 key 全部在 Spring 上下文里，方法执行时随手可取</p></div></div>
+      <div class="oc-step"><div class="oc-sn">4</div><div class="oc-sc"><h4>组合级授权</h4><p>允许 logistics tracking 但禁止 after-sales 域——OS 只能给整个可执行文件，我们能给命令树上任意子树</p></div></div>
+    </div>
+    <div class="oc-hl" style="margin-top:22px">💡 <b>权限拒绝反馈给模型：</b>拒绝发生在 Spring Security 过滤器层，返回结构化的"权限不足"消息（非裸 500）。模型收到后停止重试、向用户解释——因为这是明确的"不允许"，不是"参数错了再试一次"。</div>
+    <aside class="notes">
+      <p>因为命令执行就是方法调用，方法级的一切控制手段都直接可用。四种粒度：方法级，单条命令可以挂独立的 authority；参数级，拦截器能拿到解析后的参数 Map；上下文级，请求的会话、用户、来源 key 随手可取；组合级，可以定义命令树上任意一棵子树的权限——这是 OS 做不到的。</p>
+      <p>还有一个实战细节：权限拒绝的反馈要面向模型设计。第一版我们返回裸 403，模型会固执地重试。改成结构化的"该 key 无权执行此命令组"后，模型从重试转为转告用户，对话体验好了很多。</p>
+    </aside>
+  </section>
+
+  <!-- ===== 14 DEMO: 双方案对比 ===== -->
+  <section class="slide">
+    <div class="oc-cbg"></div><div class="oc-cgrid"></div>
+    <div class="oc-snum">14 / 16</div>
+    <div class="oc-tag">● DEMO · 同一任务，两种方案</div>
+    <h2 class="oc-h2">任务："订单 3 天没动了，帮我查一下"</h2>
+    <div class="oc-grid-2" style="margin-top:18px">
+      <div class="oc-card"><span class="oc-badge oc-bb">方案 A：MCP 多工具全量注入</span>
+        <p style="color:var(--oc-dim);font-size:13px;line-height:1.6">prompt 50+ 工具 schema<br><b style="color:var(--oc-orange)">~12,000 token 常驻</b><br>模型犹豫、误调 1 次<br>有效调用率 3/5（5 轮，含 2 次纠错）</p></div>
+      <div class="oc-card" style="border-color:rgba(63,185,80,.35);background:rgba(63,185,80,.05)"><span class="oc-badge oc-bg">方案 B：单工具 + skill + command</span>
+        <p style="color:var(--oc-dim);font-size:13px;line-height:1.6">run_cli + 2 个域技能<br><b style="color:var(--oc-green)">~2,000 token</b><br>模型直接命中<br>有效调用率 2/2（2 轮，零纠错）</p></div>
+    </div>
+    <table class="oc-table" style="margin-top:18px;font-size:14px">
+      <tr><th>维度</th><th>方案 A</th><th>方案 B</th></tr>
+      <tr><td>常驻上下文</td><td style="color:var(--oc-orange)">~12,000 token</td><td style="color:var(--oc-green)">~2,000 token</td></tr>
+      <tr><td>有效调用率</td><td style="color:var(--oc-orange)">3/5</td><td style="color:var(--oc-green)">2/2</td></tr>
+      <tr><td>首 token 延迟</td><td style="color:var(--oc-orange)">显著增加</td><td style="color:var(--oc-green)">明显更低</td></tr>
+      <tr><td>权限控制</td><td style="color:var(--oc-dimmer)">无法按域隐藏工具</td><td style="color:var(--oc-green)">key + authority 按域放行</td></tr>
+    </table>
+    <aside class="notes">
+      <p>来跑一个 Demo。真实多步任务："客户反馈订单 3 天没动，帮我查一下订单状态和最新物流，如果是异常件顺便看下有没有售后工单。"需要客户订单、物流轨迹、售后三个能力域。</p>
+      <p>方案 A：MCP 多工具全量注入。prompt 里 50 多个工具 schema，约 12000 token 常驻。模型第一轮在三个"物流"工具间犹豫，选中后又误调了一次。5 轮里有 2 轮是纠错。</p>
+      <p>方案 B：单工具加 skill 加 command。常驻 prompt 只有 run_cli schema 加两个域技能，约 2000 token。模型直接调用两次，全部命中，零纠错。上下文降 80%，调用效率翻倍。</p>
+    </aside>
+  </section>
+
+  <!-- ===== 15 DATA: 数据与踩坑 ===== -->
+  <section class="slide">
+    <div class="oc-cbg"></div><div class="oc-cgrid"></div>
+    <div class="oc-snum">15 / 16</div>
+    <div class="oc-tag">● DATA · 量化收益与踩坑</div>
+    <h2 class="oc-h2"><span class="oc-g">80%+</span> 上下文降幅</h2>
+    <div class="oc-grid-3" style="margin-top:16px">
+      <div class="oc-card" style="text-align:center"><div class="oc-big oc-g" style="font-size:56px">-80%</div><p style="color:var(--oc-dim);margin-top:6px;font-size:13px">常驻 schema token<br>12k → ~100</p></div>
+      <div class="oc-card" style="text-align:center"><div class="oc-big oc-g" style="font-size:56px">-70%</div><p style="color:var(--oc-dim);margin-top:6px;font-size:13px">输入 token 费用<br>长 prompt 放大效应退场</p></div>
+      <div class="oc-card" style="text-align:center"><div class="oc-big oc-g" style="font-size:56px">↑</div><p style="color:var(--oc-dim);margin-top:6px;font-size:13px">成功率 & 轮次效率<br>纠错轮次基本消失</p></div>
+    </div>
+    <table class="oc-table" style="margin-top:16px;font-size:13px">
+      <tr><th>踩过的坑</th><th>解法</th></tr>
+      <tr><td>skill 不触发</td><td>description 改写为"用户会说的话" + 总览技能兜底路由</td></tr>
+      <tr><td>模型参数错</td><td>强校验根命令名 + 缺参返回 help() + 统一参数范式</td></tr>
+      <tr><td>命令粒度失当</td><td>一条命令 = 一次 API 调用 + 一个明确意图，域内子命令树细分</td></tr>
+      <tr><td>拒绝后重试</td><td>拒绝消息语义化："该 key 无权执行此命令组"</td></tr>
+    </table>
+    <aside class="notes">
+      <p>数据说话。常驻 schema 从 12k token 降到 100 token 本体，叠加按需技能后典型场景 1.5 到 2.5k，整体降幅 80% 以上。输入 token 费用下降约七成——长 prompt 对每轮推理的放大效应退场了。成功率方面，跨域任务的"选错工具→纠错"轮次基本消失。</p>
+      <p>也踩过四个坑。第一，skill 不触发，早期描述写得太"工程"，改成"用户会说的话"就好了。第二，模型参数错，位置参数和 option 混用，强校验根命令名加缺参返回 help。第三，命令粒度，太粗填参出错，太细反而不会选，定标"一条命令一次 API 一个意图"。第四，权限拒绝后重试，改成语义化拒绝消息后解决了。</p>
+    </aside>
+  </section>
+
+  <!-- ===== 16 THANKS ===== -->
+  <section class="slide">
+    <div class="oc-cbg"></div><div class="oc-cgrid"></div>
+    <div class="oc-snum">16 / 16</div>
+    <div class="oc-tag">● SUMMARY</div>
+    <div class="oc-quote">
+      <blockquote>我们没有做 CLI，我们做的是：<br>用 Command Pattern 把能力抽象成方法，<br>用 skill 做可见性路由，<br>用单一工具做入口——<br><span class="oc-g">在上下文、权限、审计、扩展四个维度<br>同时简化了 LLM 工具调用。</span></blockquote>
+    </div>
+    <div style="margin-top:36px">
+      <span class="oc-pill">📋 上下文：O(N) → O(1)</span>
+      <span class="oc-pill">🔐 权限：三层正交</span>
+      <span class="oc-pill">📊 审计：单入口一行日志</span>
+      <span class="oc-pill">🚀 扩展：加一个类 + 一个 skill</span>
+    </div>
+    <p class="oc-sub" style="margin-top:24px;font-size:16px">核心原则：<b style="color:var(--oc-text)">上下文是稀缺资源，能力的加载应该是按需、分层、场景驱动的。</b></p>
+    <div class="oc-hl" style="margin-top:18px">下一步：OAuth 2.1 权限改造 · 命令级限流 · 使用埋点数据闭环</div>
+    <aside class="notes">
+      <p>收尾。核心原则就一句话：上下文是稀缺资源，能力的加载应该是按需、分层、场景驱动的。多工具方案的失败不是工具太多，而是默认了"全部能力必须常驻上下文"。</p>
+      <p>我们做的就是把 Web 前端十年前就学会的事搬进 LLM 工程：路由懒加载。run_cli 是入口，skill 是路由表，--help 是运行时 introspection，命令树是代码分割后的模块。</p>
+      <p>这个原则不限于 MCP。RAG 的检索时机、Agent 的记忆加载、多 agent 的能力分配，都是同一个道理。</p>
+      <p>下一步三件事：OAuth 2.1 权限改造已经立项；命令级限流在单一入口上做；使用埋点反哺技能包优化——数据闭环。谢谢大家，欢迎提问。</p>
+    </aside>
+  </section>
+
+</div>
+<script src="file:///c:/Users/22595/etailerhub-workspace/hypersku-workspace-cli/.github/skills/html-ppt-skill/assets/runtime.js"></script>
+</body>
+</html>

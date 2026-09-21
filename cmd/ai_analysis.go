@@ -3,7 +3,6 @@ package cmd
 import (
 	"fmt"
 	"strconv"
-	"strings"
 
 	"github.com/hypersku/hypersku-cli/internal/apis"
 	"github.com/spf13/cobra"
@@ -11,10 +10,37 @@ import (
 
 // 风险等级映射
 var riskLevelMap = map[int]string{
-	0: "无风险",
-	1: "低风险",
-	2: "中风险",
-	3: "高风险",
+	0:  "已成功",
+	10: "中风险",
+	20: "高风险",
+	30: "无风险",
+	40: "监控中",
+}
+
+var logisticsType = map[string]string{
+	"unshipped":      "未发货",
+	"noGoods":        "无货",
+	"fakeShipment":   "假发货",
+	"notToWarehouse": "未到货",
+	"fakeSigned":     "假签收",
+	"returnOrder":    "退件",
+	"丢件":             "丢件",
+	"notSigned":      "未签收",
+	"未入库":            "未入库",
+	"丢包裹":            "丢包裹",
+}
+
+var internationalLogisticsHyperskuStatusMap = map[int]string{
+	1:  "未发货",
+	2:  "无货",
+	3:  "国内退件",
+	4:  "未揽收",
+	5:  "拦截",
+	6:  "未签收",
+	7:  "海外退件",
+	8:  "达到待取",
+	9:  "投递失败",
+	10: "退回",
 }
 
 // AI 分析类型
@@ -45,8 +71,7 @@ var aiAnalysisCmd = &cobra.Command{
   task-progress           AI 任务风险等级汇总`,
 }
 
-// ============ 通用 flag 绑定 ============
-
+// bindAnalysisQueryFlags 通用 flag 绑定
 func bindAnalysisQueryFlags(cmd *cobra.Command, query *apis.AiAnalysisQuery) {
 	cmd.Flags().IntVarP(&query.Page, "page", "p", 1, "页码")
 	cmd.Flags().IntVarP(&query.Limit, "limit", "l", 20, "每页条数")
@@ -62,7 +87,6 @@ func bindAnalysisQueryFlags(cmd *cobra.Command, query *apis.AiAnalysisQuery) {
 }
 
 // ============ 辅助函数 ============
-
 func printCountTable(cmd *cobra.Command, title string, counts []apis.AiBaseCount) {
 	fmt.Fprintf(cmd.OutOrStdout(), "\n%s:\n\n", title)
 	if len(counts) == 0 {
@@ -74,18 +98,21 @@ func printCountTable(cmd *cobra.Command, title string, counts []apis.AiBaseCount
 	for _, c := range counts {
 		target := c.Target
 		if v, err := strconv.Atoi(target); err == nil {
+			if v != 20 && v != 10 {
+				continue
+			}
 			if name, ok := riskLevelMap[v]; ok {
-				target = fmt.Sprintf("%s (%d)", name, v)
+				target = fmt.Sprintf("%s", name)
 			}
 		}
+
 		fmt.Fprintf(cmd.OutOrStdout(), "|%s|%d|\n", target, c.Count)
 	}
 }
 
 // ============ 国际物流异常分析 ============
-
 var aiIntlLogisticsCmd = func() *cobra.Command {
-	var query apis.AiAnalysisQuery
+	var query apis.AiInternationalLogisticsQuery
 
 	cmd := &cobra.Command{
 		Use:   "intl-logistics",
@@ -102,23 +129,26 @@ var aiIntlLogisticsCmd = func() *cobra.Command {
 				return
 			}
 			fmt.Fprintf(cmd.OutOrStdout(), "当前页码：%d，页大小：%d，总数：%d\n\n", query.Page, query.Limit, res.Data.Total)
-			fmt.Fprintln(cmd.OutOrStdout(), "|ID|客户|订单号|仓库|物流单号|物流公司|最新轨迹|状态|AI风险|AI摘要|")
-			fmt.Fprintln(cmd.OutOrStdout(), "|----|----|----|----|----|----|----|----|----|----|")
+
 			for _, row := range res.Data.Rows {
-				summary := row.AiSummary
-				if len(summary) > 50 {
-					summary = summary[:50] + "..."
-				}
-				fmt.Fprintf(cmd.OutOrStdout(), "|%d|%s|%d|%s|%s|%s|%s|%s|%s|%s|\n",
-					row.ID, row.CustomerUsername, row.OrderID, row.WarehouseName,
-					row.TrackingNumber, row.LogisticsCompanyName,
-					row.LatestLogisticsTrack,
-					row.LatestLogisticsStatusText,
-					riskLevelMap[row.AiRiskLevel], summary)
+				fmt.Fprintln(cmd.OutOrStdout(), "----")
+				fmt.Fprintln(cmd.OutOrStdout(), "订单: ", row.OrderID)
+				fmt.Fprintln(cmd.OutOrStdout(), "仓库: ", row.WarehouseName)
+				fmt.Fprintln(cmd.OutOrStdout(), "物流单号: ", row.TrackingNumber)
+				fmt.Fprintln(cmd.OutOrStdout(), "订单备注: ", row.OrderRemark)
+				fmt.Fprintln(cmd.OutOrStdout(), "工单类型: ", internationalLogisticsHyperskuStatusMap[row.HyperskuStatus])
+				fmt.Fprintln(cmd.OutOrStdout(), "工单状态: ", hyperskuSubStatusMap[row.HyperskuSubStatus])
+				fmt.Fprintln(cmd.OutOrStdout(), "风险等级: ", riskLevelMap[row.AiRiskLevel])
+				fmt.Fprintln(cmd.OutOrStdout(), "AI摘要: ", row.AiSummary)
+				fmt.Fprintln(cmd.OutOrStdout(), "AI分析时间: ", row.AiSummaryUpdTime)
 			}
 		},
 	}
-	bindAnalysisQueryFlags(cmd, &query)
+
+	cmd.Flags().IntVarP(&query.Page, "page", "p", 1, "页码")
+	cmd.Flags().IntVarP(&query.Limit, "limit", "l", 20, "每页条数")
+	cmd.Flags().IntVar(&query.RiskLevel, "risk-level", 20, "风险等级 (10: 中风险、20: 高风险)")
+	cmd.Flags().StringVar(&query.SearchKey, "search-key", "", "交易号、快递单号")
 	return cmd
 }()
 
@@ -141,7 +171,75 @@ var aiIntlLogisticsCountCmd = func() *cobra.Command {
 	return cmd
 }()
 
-// ============ 库存动销分析 ============
+// ============ 采购售后分析 ============
+var aiPurchaseCmd = func() *cobra.Command {
+	var query apis.AiAnalysisQuery
+
+	cmd := &cobra.Command{
+		Use:   "purchase",
+		Short: "采购售后分析",
+		Long:  "分页查询采购售后 AI 分析结果，含物流/退款信息、AI 摘要、风险等级",
+		Run: func(cmd *cobra.Command, args []string) {
+			res, err := apis.NewAiAnalysisApi().PurchaseTable(query)
+			if err != nil {
+				cmd.PrintErrf("查询采购售后分析失败: %v\n", err)
+				return
+			}
+			if res == nil || res.Data == nil || len(res.Data.Rows) == 0 {
+				fmt.Fprintf(cmd.OutOrStdout(), "总数：%d\n\n无数据", 0)
+				return
+			}
+			fmt.Fprintf(cmd.OutOrStdout(), "当前页码：%d，页大小：%d，总数：%d\n\n", query.Page, query.Limit, res.Data.Total)
+			fmt.Fprintln(cmd.OutOrStdout(), "|ID|来源|数据ID|交易号|物流单号|类型|风险|AI摘要|")
+			fmt.Fprintln(cmd.OutOrStdout(), "|----|----|----|----|----|----|----|----|")
+			for _, row := range res.Data.Rows {
+				summary := row.Summary
+				if len(summary) > 50 {
+					summary = summary[:50] + "..."
+				}
+				sourceName := "物流异常"
+				if row.Source == "after_sales_1688" {
+					sourceName = "1688售后"
+				}
+				trackingNumber := ""
+				if row.Logistics != nil {
+					trackingNumber = row.Logistics.TrackingNumber
+				}
+				fmt.Fprintf(cmd.OutOrStdout(), "|%d|%s|%s|%s|%s|%s|%s|%s|\n",
+					row.ID, sourceName,
+					row.DataID,
+					row.ThirdOrderID,
+					trackingNumber,
+					logisticsType[row.Type],
+					riskLevelMap[row.RiskLevel],
+					summary)
+			}
+		},
+	}
+	bindAnalysisQueryFlags(cmd, &query)
+	return cmd
+}()
+
+var aiPurchaseCountCmd = func() *cobra.Command {
+	var query apis.AiAnalysisQuery
+
+	cmd := &cobra.Command{
+		Use:   "purchase-count",
+		Short: "采购售后风险等级统计",
+		Run: func(cmd *cobra.Command, args []string) {
+			counts, err := apis.NewAiAnalysisApi().PurchaseCountRiskLevel(query)
+			if err != nil {
+				cmd.PrintErrf("统计失败: %v\n", err)
+				return
+			}
+			printCountTable(cmd, "采购售后风险等级分布", counts)
+		},
+	}
+	bindAnalysisQueryFlags(cmd, &query)
+	return cmd
+}()
+
+/* // ============ 库存动销分析 ============
 
 var aiInventoryCmd = func() *cobra.Command {
 	var query apis.AiAnalysisQuery
@@ -197,73 +295,9 @@ var aiInventoryCountCmd = func() *cobra.Command {
 	}
 	bindAnalysisQueryFlags(cmd, &query)
 	return cmd
-}()
+}() */
 
-// ============ 采购售后分析 ============
-
-var aiPurchaseCmd = func() *cobra.Command {
-	var query apis.AiAnalysisQuery
-
-	cmd := &cobra.Command{
-		Use:   "purchase",
-		Short: "采购售后分析",
-		Long:  "分页查询采购售后 AI 分析结果，含物流/退款信息、AI 摘要、风险等级",
-		Run: func(cmd *cobra.Command, args []string) {
-			res, err := apis.NewAiAnalysisApi().PurchaseTable(query)
-			if err != nil {
-				cmd.PrintErrf("查询采购售后分析失败: %v\n", err)
-				return
-			}
-			if res == nil || res.Data == nil || len(res.Data.Rows) == 0 {
-				fmt.Fprintf(cmd.OutOrStdout(), "总数：%d\n\n无数据", 0)
-				return
-			}
-			fmt.Fprintf(cmd.OutOrStdout(), "当前页码：%d，页大小：%d，总数：%d\n\n", query.Page, query.Limit, res.Data.Total)
-			fmt.Fprintln(cmd.OutOrStdout(), "|ID|来源|数据ID|交易号|物流单号|类型|风险|AI摘要|")
-			fmt.Fprintln(cmd.OutOrStdout(), "|----|----|----|----|----|----|----|----|")
-			for _, row := range res.Data.Rows {
-				summary := row.Summary
-				if len(summary) > 50 {
-					summary = summary[:50] + "..."
-				}
-				sourceName := "物流异常"
-				if row.Source == "after_sales_1688" {
-					sourceName = "1688售后"
-				}
-				trackingNumber := ""
-				if row.Logistics != nil {
-					trackingNumber = row.Logistics.TrackingNumber
-				}
-				fmt.Fprintf(cmd.OutOrStdout(), "|%d|%s|%s|%d|%s|%s|%s|%s|\n",
-					row.ID, sourceName, row.DataID, row.ThirdOrderID,
-					trackingNumber, row.Type, riskLevelMap[row.RiskLevel], summary)
-			}
-		},
-	}
-	bindAnalysisQueryFlags(cmd, &query)
-	return cmd
-}()
-
-var aiPurchaseCountCmd = func() *cobra.Command {
-	var query apis.AiAnalysisQuery
-
-	cmd := &cobra.Command{
-		Use:   "purchase-count",
-		Short: "采购售后风险等级统计",
-		Run: func(cmd *cobra.Command, args []string) {
-			counts, err := apis.NewAiAnalysisApi().PurchaseCountRiskLevel(query)
-			if err != nil {
-				cmd.PrintErrf("统计失败: %v\n", err)
-				return
-			}
-			printCountTable(cmd, "采购售后风险等级分布", counts)
-		},
-	}
-	bindAnalysisQueryFlags(cmd, &query)
-	return cmd
-}()
-
-// ============ 供应商分析 ============
+/* // ============ 供应商分析 ============
 
 var aiSupplierCmd = func() *cobra.Command {
 	var query apis.AiAnalysisQuery
@@ -405,20 +439,20 @@ var aiTaskProgressCmd = &cobra.Command{
 		}
 		printCountTable(cmd, aiTaskTypeMap[taskType]+"风险等级汇总", counts)
 	},
-}
+} */
 
 func init() {
 	aiAnalysisCmd.AddCommand(aiIntlLogisticsCmd)
 	aiAnalysisCmd.AddCommand(aiIntlLogisticsCountCmd)
-	aiAnalysisCmd.AddCommand(aiInventoryCmd)
-	aiAnalysisCmd.AddCommand(aiInventoryCountCmd)
+	// aiAnalysisCmd.AddCommand(aiInventoryCmd)
+	// aiAnalysisCmd.AddCommand(aiInventoryCountCmd)
 	aiAnalysisCmd.AddCommand(aiPurchaseCmd)
 	aiAnalysisCmd.AddCommand(aiPurchaseCountCmd)
-	aiAnalysisCmd.AddCommand(aiSupplierCmd)
-	aiAnalysisCmd.AddCommand(aiSupplierCountCmd)
-	aiAnalysisCmd.AddCommand(aiCustomerOrderCmd)
-	aiAnalysisCmd.AddCommand(aiCustomerOrderCountCmd)
-	aiAnalysisCmd.AddCommand(aiTaskProgressCmd)
+	// aiAnalysisCmd.AddCommand(aiSupplierCmd)
+	// aiAnalysisCmd.AddCommand(aiSupplierCountCmd)
+	// aiAnalysisCmd.AddCommand(aiCustomerOrderCmd)
+	// aiAnalysisCmd.AddCommand(aiCustomerOrderCountCmd)
+	// aiAnalysisCmd.AddCommand(aiTaskProgressCmd)
 
 	rootCmd.AddCommand(aiAnalysisCmd)
 }
