@@ -61,10 +61,10 @@
       <div class="oc-card" style="text-align:center"><div class="oc-big oc-g" style="font-size:64px">50+</div><p style="color:var(--oc-dim);margin-top:8px;font-size:15px">工具全量铺开<br>每域 3~8 个能力，季度递增</p></div>
       <div class="oc-card" style="text-align:center"><div class="oc-big oc-g" style="font-size:64px">12k</div><p style="color:var(--oc-dim);margin-top:8px;font-size:15px">token 常驻开销<br>每次请求都付这个账</p></div>
     </div>
-    <div class="oc-hl" style="margin-top:26px">💡 <b>关键机制：</b>客户端在连接建立（及工具列表变更）后，把服务端<b>全部工具</b>的 schema 注入 system prompt，此后每轮请求都携带——工具是你加的，账单是每轮请求都要付的。</div>
+    <div class="oc-hl" style="margin-top:26px">💡 <b>关键机制：</b>客户端在连接建立（及工具列表变更）后，把服务端<b>全部工具</b>的 schema 收入工具清单，随此后每轮请求全量携带（部分客户端实现为注入 system prompt，属实现细节）——工具是你加的，账单是每轮请求都要付的。</div>
     <aside class="notes">
       <p>先看三个数字。14 个业务域，每个域三到八个能力，全量铺开就是 50 多个工具，而且每个季度都在加新域、新能力。</p>
-      <p>这里有个 MCP 的协议行为必须强调：<b>客户端在连接建立（及工具列表变更）后，会把服务端全部工具的 schema——名字、描述、参数定义——整个注入 system prompt，并在此后的每一轮请求中携带</b>。一个 schema 平均 150 到 300 个 token，50 个工具就是 7.5k 到 1 万 5 的常驻开销。</p>
+      <p>这里有个 MCP 的协议行为必须强调：<b>客户端在连接建立（及工具列表变更）后，会把服务端全部工具的 schema——名字、描述、参数定义——收入工具清单，随此后的每一轮请求全量携带；部分客户端的实现是注入 system prompt，那属于实现细节</b>。一个 schema 平均 150 到 300 个 token，50 个工具就是 7.5k 到 1 万 5 的常驻开销。</p>
       <p>这笔账有三重性质：它是每次请求都要付的；它跟当次任务用不用得上这个工具无关；而且工具是你加的、账是全局付的——<b>你给采购域加一个工具，查物流的请求 prompt 也跟着变长</b>。工具是你加的，账单是每次请求都要付的。</p>
     </aside>
   </section>
@@ -101,17 +101,18 @@
     <h2 class="oc-h2">Router 不是答案</h2>
     <div class="oc-grid-2" style="margin-top:24px">
       <div class="oc-card"><span class="oc-badge oc-bb">做不了</span>
-<p style="color:var(--oc-dim);font-size:16px;line-height:1.65">router 需要前置检索/模型层，带来新的改造成本、延迟与准确率问题；当时的客户端（百炼、MCP 桌面端）也不具备配合 router 的能力。</p></div>
+<p style="color:var(--oc-dim);font-size:16px;line-height:1.65">裁剪必须作用在注入之前——要么客户端按会话动态增删工具，要么自建网关改写 tools/list；当时的宿主（百炼、MCP 桌面端）不可控，schema 连接时全量注入，服务端无裁剪钩子，router 无处落脚。</p></div>
       <div class="oc-card"><span class="oc-badge oc-bo">不够</span>
-        <p style="color:var(--oc-dim);font-size:16px;line-height:1.65">router 只解决“选哪个”，没解决“上下文常驻”——就算每次只选中 3 个工具，另外 47 个 schema 依然躺在 prompt 里。</p>
+        <p style="color:var(--oc-dim);font-size:16px;line-height:1.65">就算打通裁剪（可控客户端/网关做得到），也只是范式内优化：50 个常驻 → K 个常驻，仍随工具数线性增长；路由错误 = 被裁工具不可见，兜底回退全量；加工具还要同步维护 router 索引；且检索有损，筛漏即盲区——不如让模型直接阅读。</p>
       </div>
     </div>
     <div class="oc-hl" style="margin-top:26px">💡 这些方案的共同盲区：都默认"工具 schema 必须出现在上下文里"，只是想办法让它<b>少一点</b>，没有人质疑它<b>必须在</b>。</div>
     <aside class="notes">
-      <p>那做 tool router 呢？我们认真考虑过，还先试过几个轻量替代。</p>
-      <p>裁剪工具描述？描述是模型唯一的线索，越短越选错。工具分组加二级路由——先给模型一个"选组"工具，再暴露组内工具？本质是把 router 塞进模型：两跳决策、两次出错机会，而且组内 schema 还是要注入。关键词匹配预筛选？自然语言的同义词多义词面前不堪一击，错筛比不筛更糟。</p>
-      <p>正经做 router 也有两个问题。第一是<b>做不了</b>：router 需要前置的检索或模型层，带来新的改造成本、延迟与准确率问题；当时的客户端——百炼、MCP 桌面端——也不具备配合 router 的能力。</p>
-      <p>第二是<b>做了也不够</b>。router 只解决"选哪个"，没解决"上下文常驻"——就算每次只选中 3 个工具，另外 47 个的 schema 依然躺在 prompt 里；路由错误时还要整段兜底。</p>
+      <p>那做 tool router 呢？先试过几个轻量替代：裁剪工具描述？描述是模型唯一的线索，越短越选错。工具分组加二级路由——先给模型一个"选组"工具，再暴露组内工具？本质是把 router 塞进模型：两跳决策、两次出错机会，而且组内 schema 还是要注入。关键词匹配预筛选？自然语言的同义词多义词面前不堪一击，错筛比不筛更糟。</p>
+      <p>正经做 router 呢？先澄清：router 不是伪命题——在可控客户端或自建网关的场景下，确实可以用前置检索/过滤器按对话裁剪注入的工具集，MCP 生态的 tool search 也是同一方向。我们没走这条路，是三层原因。</p>
+      <p>第一是<b>做不了</b>。router 的裁剪必须作用在注入之前——要么客户端支持按会话动态增删工具，要么自建网关改写 tools/list。当时的宿主是百炼、MCP 桌面端这类不可控客户端：schema 在连接建立时全量注入，协议没有留给服务端按会话裁剪的钩子，router 无处落脚。</p>
+      <p>第二是<b>打通了也不够</b>。就算裁剪链路打通，router 也是同一范式内的优化，不是范式更替："50 个 schema 常驻"优化成"K 个常驻"，占用仍随可见工具数线性增长；路由错误是硬失败——被裁掉的工具模型根本看不见，兜底只能回退全量注入，问题原样回归；每加一个工具还要同步维护 router 的索引，扩展摩擦只是转移；授权与执行依旧焊死在 @McpTool 里，可见性也至多是被 router 优化了注入集，并未与它解耦。</p>
+      <p>还有第三层：<b>skill + router 天然比 skill + command 多一跳且有损</b>。模型本身具备阅读能力——skill 被宿主命中后，文档内容就是它要的命令知识，读完即调。router 方案则是串联两跳：宿主先按语义命中 skill，模型读完后还要经 router 的关键词/向量检索二次筛出工具、注入 schema、再读一遍——多一跳延迟，多一跳出错机会，而第二跳的有损检索筛漏的工具模型根本看不见。让模型直接阅读，用的是它最强的语义理解；让检索器替模型选工具，等于把链路里最强的环节外包给了最弱的一跳。</p>
       <p>后来我们意识到，这些方案有个共同盲区：<b>都默认"工具 schema 必须出现在上下文里"，只是想办法让它少一点，没有人质疑它是不是必须在。</b></p>
     </aside>
   </section>
@@ -149,7 +150,7 @@
       <div class="oc-card" style="text-align:center;border-color:rgba(88,166,255,.35);background:rgba(88,166,255,.05)">
         <span class="oc-badge oc-bb">可见性路由</span>
         <h4 class="oc-g" style="font-size:22px;margin:10px 0 6px">16 个 skill</h4>
-        <p style="color:var(--oc-dim);font-size:15px;line-height:1.55">1 总览 + 15 能力域<br>总览常驻 · 域技能命中注入<br>~0.5-1k token/域</p>
+        <p style="color:var(--oc-dim);font-size:15px;line-height:1.55">1 总览 + 15 能力域<br>description 常驻 · 正文命中注入<br>~0.5-1k token/域</p>
       </div>
       <div class="oc-card" style="text-align:center;border-color:rgba(63,185,80,.35);background:rgba(63,185,80,.05)">
         <span class="oc-badge oc-bg">能力载体</span>
@@ -160,8 +161,8 @@
     <div class="oc-hl" style="margin-top:24px">💡 <b>正名：</b>不是 CLI，不是 shell 封装——是应用内的 <b>Command Pattern</b>。一条命令 = 一个 Java 方法调用，没有 Runtime.exec，没有字符串拼接，shell 元字符没有语义生存空间。</div>
     <aside class="notes">
       <p>最终方案是个三件套。</p>
-      <p>第一，<b>MCP 收敛为单一工具 run_cli</b>：一个 string 参数，一段固定说明，schema 恒定，上下文占用从 O(N) 降到 O(1)。</p>
-      <p>第二，<b>16 个 skill 做可见性路由</b>：1 个总览技能常驻作路由索引，15 个域技能按能力域划分、场景命中才注入，每个域 0.5 到 1k token，在合适的时机告诉模型"这个域有哪些命令"。</p>
+      <p>第一，<b>MCP 收敛为单一工具 run_cli</b>：一个 string 参数，一段固定说明，schema 恒定，命令化能力部分的上下文占用从 O(N) 降到 O(1)。</p>
+      <p>第二，<b>16 个 skill 做可见性路由</b>：常驻的只是全部技能的 frontmatter description——16 条，量级很小；技能正文（总览路由表和 15 个域技能）都是命中才注入，每个域 0.5 到 1k token，在合适的时机告诉模型"这个域有哪些命令"。</p>
       <p>第三，<b>Command Registry 做能力载体</b>：服务端进程内的一棵命令树，命令名到方法调用的映射。</p>
       <p>这里要正名，因为看到 run_cli 这个名字，很容易误会我们在 MCP 里包了一个 shell。<b>不是</b>：不 fork 进程，命令执行是进程内的方法调用；不拼 shell 字符串，输入被 tokenizer 按空白切分、按选项语法解析成结构化 Map——分号、管道、$() 这些 shell 元字符在这里<b>没有语义生存空间</b>。它是应用内的 Command Pattern。</p>
       <p>还有个彩蛋：同一套命令语法有两个宿主——Go CLI 做试验场，验证命令稳定性与可用性、编写测试 skill；Java 命令层做生产，服务 MCP。<b>命令先在 CLI 上打磨，再固化到 Java 侧，一套心智，两处复用。</b></p>
@@ -192,7 +193,7 @@
     </aside>
   </section>
 
-  <!-- ===== 09 ARCH: run_cli 设计 ===== -->
+  <!-- ===== 08 ARCH: run_cli 设计 ===== -->
   <section class="slide">
     <div class="oc-cbg"></div><div class="oc-cgrid"></div>
     <div class="oc-snum">09 / 18</div>
@@ -221,7 +222,7 @@ public class CliTools {
     <aside class="notes">
       <p>先看 run_cli 的代码，很短，值得逐行看。</p>
       <p>类上挂 @PreAuthorize("hasAuthority('tool:cli')")——授权落点第四章细讲。工具方法就一个：@McpTool 注解声明名字和描述，description 里只写了命令语法规范——必须以 hypersku-cli 开头、位置参数在选项前、任意命令加 --help 看帮助。<b>注意这段描述是恒定的，不含任何具体命令知识。</b></p>
-      <p>三个设计要点。第一，<b>为什么是 1 个而不是 N 个</b>：一个 string 参数吃下所有命令，schema 恒定、不随能力增长变化，上下文从 O(N) 降到 O(1)。当然，少数强 schema 工具我们保留了原生 MCP 形态，混合策略在第八节讲。</p>
+      <p>三个设计要点。第一，<b>为什么是 1 个而不是 N 个</b>：一个 string 参数吃下所有命令，schema 恒定、不随能力增长变化，命令化能力部分的上下文从 O(N) 降到 O(1)。当然，少数强 schema 工具我们保留了原生 MCP 形态，混合策略在第八节讲。</p>
       <p>第二，<b>单参数是有意为之</b>：不做结构化的 command 加 args 对象，因为命令语法本身就是模型的已知心智——全世界的模型都练过海量命令行语料，--help 是它们最熟悉的内省动作。<b>把命令当字符串，是把这个先验直接拿来用。</b></p>
       <p>第三，<b>空命令返回总帮助</b>：模型迷路时有一个零成本的"回到路标"动作。中间那行 logger.info 后面审计部分会用到，先记住它。</p>
     </aside>
@@ -241,8 +242,8 @@ public class CliTools {
       </div>
       <div class="oc-card" style="border-left:3px solid var(--oc-blue)">
         <div class="lv-tag" style="color:var(--oc-blue)">L1 · skill</div>
-        <h4>总览常驻 + 域技能</h4>
-        <p>总览作路由索引<br/>域技能命中注入 ~0.5-1k token/域</p>
+        <h4>description 常驻 + 正文按需</h4>
+        <p>16 条 frontmatter 常驻<br/>正文命中注入 ~0.5-1k token/域</p>
       </div>
       <div class="oc-card" style="border-left:3px solid var(--oc-green)">
         <div class="lv-tag" style="color:var(--oc-green)">L2 · --help</div>
@@ -258,8 +259,9 @@ public class CliTools {
     <div class="oc-hl" style="margin-top:22px">💡 <b>重要区分：</b>skill 只控制"模型看得见什么"，是纯粹的<b>可见性</b>问题。<b>skill ≠ 权限</b>——技能包被注入不等于执行权被授予，真正的边界在第四章。</div>
     <aside class="notes">
       <p>第二层，skill 做可见性路由。它回答一个问题：模型在某个场景下，应该知道哪些命令的存在？</p>
-      <p>run_cli 的描述不承载任何具体命令知识，命令知识的注入由 16 个技能包承担：一个总览技能，只放一张"能力域到命令入口到技能包"的路由表；下面 15 个域技能，各管一个域的命令细节。触发靠 frontmatter description 的描述式路由——写的是"用户会说的话"，比如"当用户提到物流、轨迹、快递、到哪了、包裹并提供运单号时"。宿主按语义命中，除常驻的总览路由外，只有被命中的域技能进入上下文。</p>
-      <p>这形成四级渐进式披露。L0 是 run_cli，常驻上下文约 100 token，恒定。L1 是总览加域技能包：总览技能常驻作路由索引，约 500 token，只放一张能力版图表；域技能场景命中时注入，每个 0.5 到 1k token，同时激活的域通常不超过两三个。L2 是 --help 运行时内省，按次返回不驻留。L3 是命令执行结果，进入对话。<b>能力知识从常驻 prompt 变成按需取用，每一级只在需要时付费。</b></p>
+      <p>run_cli 的描述不承载任何具体命令知识，命令知识的注入由 16 个技能包承担：一个总览技能，只放一张"能力域到命令入口到技能包"的路由表；下面 15 个域技能，各管一个域的命令细节。触发靠 frontmatter description 的描述式路由——写的是"用户会说的话"，比如"当用户提到物流、轨迹、快递、到哪了、包裹并提供运单号时"。宿主按语义命中，只有被命中技能的正文进入上下文——总览与域技能一视同仁；真正常驻的是全部 16 条技能的 frontmatter description。</p>
+      <p>这形成四级渐进式披露。L0 是 run_cli，常驻上下文约 100 token，恒定。L1 是总览加域技能包：真正常驻的是全部 16 条技能的 frontmatter description——随技能数线性增长，但量级很小，这里主动说破；正文都是命中才注入，总览路由表约 500 token 只放一张能力版图表，域技能每个 0.5 到 1k token，同时激活的域通常不超过两三个。L2 是 --help 运行时内省，按次返回不驻留。L3 是命令执行结果，进入对话。<b>能力知识从常驻 prompt 变成按需取用，每一级只在需要时付费。</b></p>
+      <p>还有一层好处藏在文档的写法里。模型看到命令描述的主通道是 skill 文档：域技能命中注入时，命令的作用、参数含义、输出格式、注意事项随文档一起到达模型，看完即调；CommandDefinition 的 description 是第二通道，--help 时按次取用。使用案例下沉为独立的可取用内容，模型自己决定读多深：简单命令看完描述即调，复杂命令或首次使用才拉案例对照，花销与需求深度成正比，而不是与工具总量成正比。两层通道都不占常驻 token。这也是 router 给不了的：检索器只决定注入哪几个工具，注入的就是全量 schema，没有先看描述、再看案例的层次。</p>
       <p>最后强调一个区分：<b>skill 不等于权限</b>。它只控制模型看得见什么。技能包被注入不等于执行权被授予；反过来，模型没见过某个命令也不构成安全边界——它可能从对话历史里学到命令名并调用。真正的边界在第四章，马上到。</p>
     </aside>
   </section>
@@ -293,7 +295,7 @@ public class ShellConfig {
       <p>第三层，Command Registry——一棵由 CommandDefinition 组成的命令树（代码里的 Shell 是历史类名，实为命令注册与分发容器，非 shell）。</p>
       <p>看字段：name 是命令名；shortDesc 和 description 是帮助文本的素材；run 是执行函数——一命令一方法；subCommands 是子命令树，域内细分靠它承载；options 是选项参数，arguments 是位置参数，按声明顺序自动编号。</p>
       <p>注册机制是 CommandProvider 函数式接口：每个实现类是一个 Spring 组件，提供一条子命令；ShellConfig 注入 List 自动聚合成树。<b>新增命令等于新增一个类，注册代码零改动，符合开闭原则。</b></p>
-      <p>执行流程：evaluate 按空白 tokenize，根命令名强校验——写错直接返回总帮助，模型拿到的错误信息本身就是路标；子命令逐级分发；--help 在任意位置都能触发；位置参数在前、--opt=value 在后，解析成 Map 交给执行函数。这里有个隐性红利：面向模型的文档只教一种范式，但解析层其实同时兼容 --opt=value、--opt value 和 --flag 三种形式——模型偶尔写串也不会失败。<b>范式收敛是给模型减负，不是给系统加脆性。</b></p>
+      <p>执行流程：evaluate 按空白 tokenize，根命令名强校验——写错直接返回总帮助，模型拿到的错误信息本身就是路标；子命令逐级分发；--help 在任意位置都能触发；位置参数在前、--opt=value 在后，解析成 Map 交给执行函数。这里有个隐性收益：面向模型的文档只教一种范式，但解析层其实同时兼容 --opt=value、--opt value 和 --flag 三种形式——模型偶尔写串也不会失败。<b>范式收敛是给模型减负，不是给系统加脆性。</b></p>
       <p>校验也是分层的：解析层做结构性校验——必填项、选项名合法性、位置参数个数；方法层做业务校验——订单号格式、数据归属。校验失败不抛异常栈，返回 help 或一句"缺少必填参数 trackingNumber"——模型读得懂，就能自我修正。</p>
     </aside>
   </section>
@@ -353,12 +355,12 @@ public class ShellConfig {
       <div class="oc-step"><div class="oc-sn">3</div><div class="oc-sc"><h4>上下文级授权</h4><p>请求所在的会话、用户、来源 key 全部在 Spring 上下文里，方法执行时随手可取</p></div></div>
       <div class="oc-step"><div class="oc-sn">4</div><div class="oc-sc"><h4>组合级授权</h4><p>允许 logistics tracking 但禁止 after-sales 域——OS 只能给整个可执行文件，我们能给命令树上任意子树</p></div></div>
     </div>
-    <div class="oc-hl" style="margin-top:22px">💡 <b>权限拒绝反馈给模型：</b>拒绝发生在 Spring Security 过滤器层，返回结构化的"权限不足"消息（非裸 500）。模型收到后停止重试、向用户解释——因为这是明确的"不允许"，不是"参数错了再试一次"。</div>
+    <div class="oc-hl" style="margin-top:22px">💡 <b>权限拒绝反馈给模型：</b>拒绝由方法级校验产生（@PreAuthorize 在工具方法调用时触发，过滤器层只处理认证失败），经 MCP 错误通道返回。结构化语义化文案开发中（与 OAuth 权限改造同批），当前返回框架默认消息——设计原则：让模型停止重试、转告用户。</div>
     <aside class="notes">
       <p>因为命令执行就是方法调用，方法级的一切控制手段都直接可用。先说现状：当前落地的是工具组级授权——@PreAuthorize 加 key 到 authority 的映射。下面四种粒度是这套架构顺手可得、按需启用的。</p>
       <p><b>方法级</b>：每条命令的执行函数可以挂独立 authority，查询类放行——未来若引入写操作，可设独立的高敏 authority 收紧，粒度到单条命令（当前业务全部为 query）。<b>参数级</b>：拦截器能拿到解析后的参数 Map，可以按参数值做策略，比如某些 key 只能查自己 tenant 的订单前缀。<b>上下文级</b>：会话、用户、来源 key 都在 Spring 上下文里，方法执行时随手可取。<b>组合级</b>：允许 logistics tracking 但禁止 after-sales 域整体——OS 只能给你整个可执行文件，我们能给命令树上任意一棵子树。</p>
       <p>再补一条对抗 prompt injection 的防线：恶意网页或对话历史能诱导模型"看见"甚至尝试调用某条命令，但不会让 authority 多放行一个组。<b>可见性可能被注入操纵，准入不会。</b>这就是两层必须分离的原因。</p>
-      <p>实战细节：权限拒绝的反馈要面向模型设计。第一版返回裸 403，模型会固执地重试或换参数硬闯。改成结构化的"该 key 无权执行此命令组"后，模型从重试转为转告用户——因为这是明确的"不允许"，不是"参数错了再试一次"，<b>对话体验好了很多</b>。</p>
+      <p>实战细节：权限拒绝的反馈要面向模型设计。拒绝由 Spring Security 的方法级校验产生——@PreAuthorize 在工具方法调用时触发，而非过滤器层，后者只处理认证失败——经 MCP 工具调用的错误通道返回模型。第一版返回裸 403，模型会固执地重试或换参数硬闯。结构化的语义化拒绝文案"该 key 无权执行此命令组"仍在开发中（与 OAuth 权限改造同批推进），当前版本返回框架默认消息；目标行为是模型从重试转为转告用户——因为这是明确的"不允许"，不是"参数错了再试一次"。</p>
     </aside>
   </section>
 
@@ -380,12 +382,15 @@ public class ShellConfig {
       <tr><td>有效调用率</td><td style="color:var(--oc-orange)">3/5</td><td style="color:var(--oc-green)">2/2</td></tr>
       <tr><td>首 token 延迟</td><td style="color:var(--oc-orange)">显著增加</td><td style="color:var(--oc-green)">明显更低</td></tr>
       <tr><td>授权粒度</td><td style="color:var(--oc-dimmer)">工具组级，粒度固定于工具</td><td style="color:var(--oc-green)">工具组级起步，可扩展到命令/参数/子树级</td></tr>
+      <tr><td>开发维护</td><td style="color:var(--oc-dimmer)">说明写注解·无结构约束·改注解即改 prompt</td><td style="color:var(--oc-green)">说明是定义层结构化字段·维护类+技能文档两件套不碰 MCP 层</td></tr>
     </table>
     <aside class="notes">
       <p>看一个 Demo。它是真实多步任务："客户反馈订单 3 天没动，帮我查一下订单状态和最新物流，如果是异常件顺便看下有没有售后工单。"需要客户订单、物流轨迹、售后三个域，典型跨域任务。</p>
       <p>先说基线：方案 A 的数字来自重构前多工具形态的等比例复现环境——保留原 50 多个工具的 schema、同一模型、同一任务集；方案 B 是当前部署形态。两种形态同 key、同任务先后执行，数字取多轮典型观测。</p>
       <p>方案 A：prompt 里 50 多个工具 schema，约 12000 token 常驻。模型第一轮在三个"物流"工具间犹豫，选中 query_customer_order_logistics_info 之后又误调了一次 domestic_logistics_query，把订单号当运单号传入。<b>5 轮里 2 轮是纠错，有效调用率 3/5。</b></p>
-      <p>方案 B：常驻 prompt 只有 run_cli、常驻的总览路由加两个域技能，约 2000 token。模型直接产出两条命令——customer order info 和 logistics tracking——2 次调用全部命中，零纠错。差距肉眼可见：system prompt 长度，和模型第一次调用就命中的"手感"。</p>
+      <p>方案 B：常驻 prompt 是 run_cli schema 加命中注入的客户、物流两个域技能，约 2000 token。模型直接产出两条命令——customer order info 和 logistics tracking——2 次调用全部命中，零纠错。差距肉眼可见：system prompt 长度，和模型第一次调用就命中的"手感"。</p>
+      <p>补一句诚实说明：本次执行中任务的条件分支（"如果是异常件顺便看下售后工单"）未触发——订单非异常件，售后域技能未注入，第三步未执行。</p>
+      <p>表里补一行工程维度的对比，token 之外这套方案从四个维度看也优于直接用 @McpTool。<b>工具说明</b>：@McpTool 的 description 只是注解里的一个字符串，长度、结构全无约束；CommandDefinition 的 shortDesc 加 description 加逐项参数说明是结构化字段，写清楚作用、参数含义、输出格式是它的本职。<b>代码规范</b>：优势收敛在定义层，名称、说明、选项、位置参数收进类型化的声明字段，命令以类为单位组织；同时要说清反向的一面——运行时类型安全在工具侧：@McpTool 的参数是类型化的 Java 方法参数，命令侧 run 是 Function&lt;Map&lt;String,String&gt;,String&gt;，运行时靠字符串键取参，这正是保留强 schema 原生工具的理由之一。<b>维护</b>：前者改一行说明就是改全量客户端的 prompt；后者的命令知识首要通道是 skill 文档，改命令参数说明要同步改 SKILL.md——维护是"类加技能文档"两件套，但都收敛在应用内，不触碰 MCP 协议层，发布即生效。<b>token</b>：前者 description 写多长常驻 token 就涨多少，详写与省钱此消彼长；后者说明只在 --help 时按次返回，想写多详细都不占常驻 token，详细与省钱不再冲突。</p>
     </aside>
   </section>
 
@@ -405,12 +410,12 @@ public class ShellConfig {
       <tr><td>skill 不触发</td><td>description 改写为"用户会说的话" + 总览技能兜底路由</td></tr>
       <tr><td>模型参数错</td><td>强校验根命令名 + 缺参返回 help() + 统一参数范式</td></tr>
       <tr><td>命令粒度失当</td><td>一条命令 = 一次 API 调用 + 一个明确意图，域内子命令树细分</td></tr>
-      <tr><td>拒绝后重试</td><td>拒绝消息语义化："该 key 无权执行此命令组"</td></tr>
+      <tr><td>拒绝后重试</td><td>拒绝消息语义化："该 key 无权执行此命令组"（设计定稿，实现随 8.4 权限改造推进中）</td></tr>
     </table>
     <aside class="notes">
       <p>数据说话。常驻 schema 从约 12k token 降到 run_cli 本体约 100 token，叠加按需技能后典型场景 1.5 到 2.5k，<b>整体降幅 80% 以上</b>。输入 token 费用按日均调用量估算下降约七成——长 prompt 对每轮推理的放大效应退场了。成功率方面，跨域任务"选错工具、再纠错"的轮次基本消失，端到端成功率和轮次效率双升。</p>
       <p>先诚实声明：这些是内部典型场景的观测与估算，不是实验室基准。趋势稳定，数字请以自家实测为准。</p>
-      <p>四个坑。skill 不触发——早期描述写得太"工程"，"本技能封装 logistics API"，宿主匹配不上"包裹到哪了"这种口语；改成用户会说的话，再留总览技能兜底。模型参数错——位置参数和选项混用、根命令名各种变体；强校验加缺参返回 help 解决。命令粒度失当——customer 一条命令吞下档案、订单、地址、统计全参数时，填参出错率飙升；拆太细模型又不会选；最后定标"一条命令等于一次 API 调用加一个明确意图"，域内靠子命令树细分。拒绝后重试——裸 403 让模型硬闯，语义化拒绝消息解决。</p>
+      <p>四个坑。skill 不触发——早期描述写得太"工程"，"本技能封装 logistics API"，宿主匹配不上"包裹到哪了"这种口语；改成用户会说的话，再留总览技能兜底。模型参数错——位置参数和选项混用、根命令名各种变体；强校验加缺参返回 help 解决。命令粒度失当——customer 一条命令吞下档案、订单、地址、统计全参数时，填参出错率飙升；拆太细模型又不会选；最后定标"一条命令等于一次 API 调用加一个明确意图"，域内靠子命令树细分。拒绝后重试——裸 403 让模型硬闯；解法是拒绝消息语义化为"该 key 无权执行此命令组"，设计定稿，实现随 OAuth 权限改造推进中。</p>
     </aside>
   </section>
 
@@ -441,7 +446,7 @@ public class ShellConfig {
     </aside>
   </section>
 
-  <!-- ===== 18 THANKS ===== -->
+  <!-- ===== 16 THANKS ===== -->
   <section class="slide">
     <div class="oc-cbg"></div><div class="oc-cgrid"></div>
     <div class="oc-snum">18 / 18</div>
