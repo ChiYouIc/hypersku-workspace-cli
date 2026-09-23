@@ -35,12 +35,17 @@ $SkillIds = @{
     'hypersku-auth'                            = ''   # TODO: 填写 CLI 登录与状态管理 的 skill_id
     'hypersku-after-sales'                    = ''   # TODO: 填写 1688售后管理 的 skill_id
     'hypersku-after-sales-apply'              = ''   # TODO: 填写 申请售后 的 skill_id
+    'hypersku-ai-analysis'                    = ''   # TODO: 填写 AI 智能分析查询 的 skill_id
     'hypersku-customer'                       = ''   # TODO: 填写 客户管理 的 skill_id
     'hypersku-customer-profile-analysis'      = ''   # TODO: 填写 客户画像分析 的 skill_id
     'hypersku-domestic-exception-handling'    = ''   # TODO: 填写 国内异常订单处理 的 skill_id
     'hypersku-domestic-third-trade-exception' = ''   # TODO: 填写 国内第三方交易异常订单管理 的 skill_id
+    'hypersku-extra-service'                  = ''   # TODO: 填写 增值服务查询 的 skill_id
     'hypersku-logistics'                      = ''   # TODO: 填写 物流轨迹查询 的 skill_id
     'hypersku-purchase'                       = ''   # TODO: 填写 采购订单管理 的 skill_id
+    'hypersku-purchase-after-sales'           = ''   # TODO: 填写 采购售后查询 的 skill_id
+    'hypersku-supplier'                       = ''   # TODO: 填写 供应商管理查询 的 skill_id
+    'hypersku-third-app-api'                  = ''   # TODO: 填写 第三方平台数据查询 的 skill_id
     'hypersku-warehouse'                      = ''   # TODO: 填写 仓库物流轨迹查询 的 skill_id
 }
 

@@ -4,7 +4,7 @@ display_name: 客户转化画像
 display_name_en: Customer Conversion Profile
 description_zh: 对**已注册且无已支付订单**的客户生成转化画像：leadQuality 线索质量、intentHeat 意向热度、followPriority 跟进优先级三项综合评分，附信息完整度（infoCompleteness 五层基准）+ 线索速读 + 按转化阶段分流的转化策略与销售话术。
 description_en: Generate conversion profiles for registered customers with no paid orders: three scores (leadQuality, intentHeat, followPriority) plus infoCompleteness (5-layer basis), reading summary, stage-specific conversion strategies, and sales scripts.
-description: HyperSKU 客户转化画像。本 skill 限定"已注册且无已支付订单"的池内客户，输出三项评分（leadQuality/intentHeat/followPriority）+ 信息完整度（infoCompleteness 五层加权）+ reading + strategy + script；followPriority 由本包 scripts/follow_priority.py 查表计算、infoCompleteness 由本包 scripts/info_completeness.py 五层加权计算；要求网页形态时只产槽位 JSON 并调用本包 scripts/render_profile.py 装配固定版式 HTML；与 hypersku-customer-profile（基础画像汇总报告）严格分工——后者覆盖全部 hypersku-cli customer 子命令的档案汇总，本 skill 只关注未转化客户的销售视角评估。
+description: HyperSKU 客户转化画像。本 skill 限定"已注册且无已支付订单"的池内客户，输出三项评分（leadQuality/intentHeat/followPriority）+ 信息完整度（infoCompleteness 五层加权）+ reading + strategy + script；followPriority 由本包 scripts/follow_priority.py 查表计算、infoCompleteness 由本包 scripts/info_completeness.py 五层加权计算；要求网页形态时只产槽位 JSON 并调用本包 scripts/render_profile.py 装配固定版式 HTML；本 skill 只关注未转化客户的销售视角评估，不覆盖订单/交易/退件清单类汇总报告。
 version: 3.0.0
 author: owen
 tags:
@@ -20,19 +20,9 @@ tags:
 
 **本 skill 约束评估规则与输出内容**——调用方可要求组织为网页、markdown 或系统触发的结构化 JSON；未指定形态时按易读的结构化文本输出。**网页形态必须走渲染管线**（见下文），禁止 AI 直接手写 HTML。
 
-## 与 hypersku-customer-profile 的边界（硬规则）
+## 职责边界
 
-本 skill 与新建的 `hypersku-customer-profile` skill 是**两个独立 skill，互不调用、不共享模板、不互相引用**：
-
-| 维度 | hypersku-customer-profile-analysis（本 skill） | hypersku-customer-profile |
-|------|-----------------------------------------------|---------------------------|
-| 用途 | 销售视角：未转化客户跟不跟、跟什么、说什么 | 客户视角：全客户的多维档案汇总报告 |
-| 客户范围 | 仅**已注册且无已支付订单**（含已绑店未首单、下单未付） | **全部客户**（含已转化） |
-| 数据来源 | `hypersku-cli customer detail`（+ 可选 profile order/transaction 聚合） | `hypersku-cli customer detail` + `customer order *` + `customer profile order *` + `customer profile transaction *` + `customer order return` |
-| 核心输出 | 三项评分（leadQuality/intentHeat/followPriority） + infoCompleteness + reading + strategy + script | 档案概览 + 订单/交易/退件多维度聚合 |
-| 渲染管线 | 本包 `scripts/render_profile.py` + `templates/profile.html` | 独立管线 `scripts/render_customer_profile.py` + `templates/customer_profile.html` |
-
-**冲突处理**：分析同一客户时，应分别由两个 skill 各产出各的产物；不要在本 skill 内塞进订单/退件清单，也不要在 `customer-profile` 内塞三项评分。
+本 skill 只做**未转化客户（已注册且无已支付订单）的销售视角评估**，输出三项评分、信息完整度、转化策略与话术；订单/交易/退件清单类的多维档案汇总不属本 skill 范围（如需原始数据，直接调用 `hypersku-cli customer` 命令族查询）。
 
 ## 分析对象与前置校验（硬规则）
 
@@ -44,7 +34,7 @@ tags:
 
 ## 数据输入
 
-执行 `hypersku-cli customer detail <customerId>` 获取脱敏档案（出参字段口径见客户管理能力域 `customer` 的参考文档 references/customer-detail.md）。解析口径：
+执行 `hypersku-cli customer detail <customerId>` 获取脱敏档案（出参字段口径见 `hypersku-customer` 技能包的参考文档 customer-detail.md）。解析口径：
 
 | 信号 | 出参字段 | 解析 |
 |------|----------|------|

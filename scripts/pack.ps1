@@ -77,7 +77,12 @@ $OldDirs = @('hypersku-auth',
     'hypersku-domestic-third-trade-exception',
     'hypersku-logistics',
     'hypersku-purchase', 
-    'hypersku-warehouse')
+    'hypersku-warehouse',
+    'hypersku-ai-analysis',
+    'hypersku-extra-service',
+    'hypersku-purchase-after-sales',
+    'hypersku-supplier',
+    'hypersku-third-app-api')
 foreach ($d in $OldDirs) {
     $target = Join-Path $AgentsSkillsRoot $d
     if (Test-Path $target) { Remove-Item -Path $target -Recurse -Force }

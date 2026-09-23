@@ -4,8 +4,8 @@ display_name: HyperSKU CLI 能力总览与使用规则
 display_name_en: HyperSKU CLI Overview & Usage Rules
 description_zh: 介绍 hypersku-cli 的整体能力版图（登录、采购、客户、物流、仓库、售后、异常处理）与统一使用规则（登录前置、参数必填、查不到即止、一次一问），不承载具体命令细节。
 description_en: Introduces the overall capability map of hypersku-cli (auth, purchase, customer, logistics, warehouse, after-sales, exception handling) and unified usage rules (login first, required params, stop on no result, one command at a time). No command details here.
-description: HyperSKU CLI 能力总览与使用规则。当用户泛称 hypersku-cli/这个 CLI 都能干什么/有哪些能力/怎么用/使用规范，或不确定该用哪个能力域时，先读本技能了解能力版图与统一规则，再路由到对应能力域技能包（hypersku-auth/purchase/customer/logistics/warehouse/after-sales 等）。
-version: 1.0.0
+description: HyperSKU CLI 能力总览与使用规则。当用户泛称 hypersku-cli/这个 CLI 都能干什么/有哪些能力/怎么用/使用规范，或不确定该用哪个能力域时，先读本技能了解能力版图与统一规则，再路由到对应能力域技能包（hypersku-auth/purchase/supplier/customer/logistics/warehouse/after-sales/ai-analysis/extra-service/third-app-api 等）。
+version: 1.1.0
 author: owen
 tags:
   - hypersku
@@ -25,6 +25,11 @@ tags:
 | 采购订单 | 订单详情、商品明细、订单搜索、采购日志、国际物流 | `hypersku-cli purchase ...` | `hypersku-purchase` |
 | 客户管理 | 客户档案、客户订单、收货地址、退件工单、订单/交易统计 | `hypersku-cli customer ...` | `hypersku-customer` |
 | 客户画像分析 | 新用户线索评估、跟进优先级、转化策略、销售话术 | 基于 `customer detail` 数据分析 | `hypersku-customer-profile-analysis` |
+| 采购售后工单 | 按交易号/订单号查询 HyperSKU 内部采购售后工单 | `hypersku-cli purchase-after-sales by-trade/by-order` | `hypersku-purchase-after-sales` |
+| 供应商管理 | 供应商详情/列表/采购次数/排行/SPU/售后/履约 | `hypersku-cli supplier ...` | `hypersku-supplier` |
+| 增值服务 | 增值服务列表、关联仓储/商品、仓库开通的服务 | `hypersku-cli extra-service ...` | `hypersku-extra-service` |
+| AI 智能分析 | 国际物流异常、采购售后两个维度的 AI 分析与风险统计 | `hypersku-cli ai-analysis ...` | `hypersku-ai-analysis` |
+| 第三方平台数据 | 1688 物流/订单/退款/产品/供应商/混批/子账号、Shopify 店铺产品/订单/库存 | `hypersku-cli third-app-api ...` | `hypersku-third-app-api` |
 | 物流轨迹 | 国内快递轨迹查询（到哪了） | `hypersku-cli logistics tracking` | `hypersku-logistics` |
 | 仓库物流 | 到仓签收、入库、仓库操作轨迹 | `hypersku-cli warehouse tracking` | `hypersku-warehouse` |
 | 1688 售后 | 售后工单、退款列表/详情、售后商品、沟通留言 | `hypersku-cli after-sales 1688 ...` | `hypersku-after-sales` |
@@ -38,4 +43,4 @@ tags:
 2. **参数必填**：各命令的必填参数（如 orderId、trackingNumber、customerId）缺失时会显示帮助信息，需提示用户补全后再执行。
 3. **查不到即止**：某个接口查不到数据时，不要换接口反复尝试，直接告知用户无结果。
 4. **一次一问**：每次只执行一条命令，等结果返回后再决定下一步，不要连续并行调用多个查询。
-5. **能力域路由**：按用户意图选择能力域——采购用 `purchase`、客户用 `customer`、国内快递轨迹用 `logistics`、仓库侧用 `warehouse`、售后用 `after-sales`，不要混用；具体子命令与参数请读取对应能力域技能包的 SKILL.md。
+5. **能力域路由**：按用户意图选择能力域——采购用 `purchase`、采购售后工单用 `purchase-after-sales`、客户用 `customer`、国内快递轨迹用 `logistics`、仓库侧用 `warehouse`、1688 售后用 `after-sales`、供应商用 `supplier`、增值服务用 `extra-service`、AI 分析用 `ai-analysis`、第三方平台数据用 `third-app-api`，不要混用；具体子命令与参数请读取对应能力域技能包的 SKILL.md。
